@@ -12,7 +12,7 @@ switch_re = re.compile(
     r'\s+(\d+\.\d+):\s+sched:sched_switch:.*==>\s+.+:(\d+)\s+\['
 )
 
-with open("perf_raw.log") as f:
+with open("perf_script.txt") as f:
     for line in f:
         w = wakeup_re.search(line)
         if w:

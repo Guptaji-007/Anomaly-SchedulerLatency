@@ -31,7 +31,7 @@ int main()
     struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
 
     setrlimit(RLIMIT_MEMLOCK, &r);
-
+    setvbuf(stdout, NULL, _IONBF, 0);
 
 
     struct bpf_object *obj;

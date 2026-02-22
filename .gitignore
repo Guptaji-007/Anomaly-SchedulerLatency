@@ -8,7 +8,7 @@
 *.so
 
 # eBPF compiled objects
-*.bpf.o
+#*.bpf.o
 *.skel.h
 
 # User compiled programs

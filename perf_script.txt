@@ -1,0 +1,914 @@
+            perf   47449 [000]  4709.475642: sched:sched_wakeup: migration/0:18 [0] CPU:000
+            perf   47449 [000]  4709.475645: sched:sched_switch: perf:47449 [120] R ==> migration/0:18 [0]
+     migration/0      18 [000]  4709.475654: sched:sched_switch: migration/0:18 [0] S ==> swapper/0:0 [120]
+            perf   47449 [001]  4709.475667: sched:sched_wakeup: migration/1:23 [0] CPU:001
+            perf   47449 [001]  4709.475669: sched:sched_switch: perf:47449 [120] R ==> migration/1:23 [0]
+     migration/1      23 [001]  4709.475674: sched:sched_switch: migration/1:23 [0] S ==> swapper/1:0 [120]
+            perf   47449 [002]  4709.475704: sched:sched_wakeup: migration/2:29 [0] CPU:002
+            perf   47449 [002]  4709.475705: sched:sched_switch: perf:47449 [120] R ==> migration/2:29 [0]
+     migration/2      29 [002]  4709.475713: sched:sched_switch: migration/2:29 [0] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4709.475804: sched:sched_wakeup: perf-exec:47450 [120] CPU:001
+         swapper       0 [001]  4709.475806: sched:sched_switch: swapper/1:0 [120] R ==> perf-exec:47450 [120]
+            perf   47449 [003]  4709.475849: sched:sched_switch: perf:47449 [120] S ==> swapper/3:0 [120]
+         swapper       0 [000]  4709.475968: sched:sched_wakeup: containerd:1129 [120] CPU:000
+         swapper       0 [000]  4709.475971: sched:sched_switch: swapper/0:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [000]  4709.475980: sched:sched_switch: containerd:1129 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4709.476279: sched:sched_wakeup: rcu_preempt:15 [120] CPU:003
+         swapper       0 [003]  4709.476283: sched:sched_switch: swapper/3:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [003]  4709.476285: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/3:0 [120]
+         swapper       0 [002]  4709.476575: sched:sched_wakeup: kworker/u16:0:47342 [120] CPU:002
+         swapper       0 [002]  4709.476577: sched:sched_switch: swapper/2:0 [120] R ==> kworker/u16:0:47342 [120]
+ kworker/u16:0-e   47342 [002]  4709.476585: sched:sched_switch: kworker/u16:0:47342 [120] I ==> swapper/2:0 [120]
+         swapper       0 [000]  4709.476593: sched:sched_wakeup: sudo:47446 [120] CPU:000
+         swapper       0 [000]  4709.476597: sched:sched_switch: swapper/0:0 [120] R ==> sudo:47446 [120]
+         swapper       0 [002]  4709.476641: sched:sched_wakeup: kworker/u16:0:47342 [120] CPU:002
+         swapper       0 [002]  4709.476644: sched:sched_switch: swapper/2:0 [120] R ==> kworker/u16:0:47342 [120]
+            sudo   47446 [000]  4709.476645: sched:sched_switch: sudo:47446 [120] S ==> swapper/0:0 [120]
+ kworker/u16:0-e   47342 [002]  4709.476653: sched:sched_switch: kworker/u16:0:47342 [120] I ==> swapper/2:0 [120]
+         swapper       0 [003]  4709.476659: sched:sched_wakeup: sshd-session:1546 [120] CPU:003
+         swapper       0 [003]  4709.476662: sched:sched_switch: swapper/3:0 [120] R ==> sshd-session:1546 [120]
+         swapper       0 [000]  4709.476673: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+    sshd-session    1546 [003]  4709.476721: sched:sched_switch: sshd-session:1546 [120] S ==> swapper/3:0 [120]
+        workload   47452 [000]  4709.476745: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4709.476748: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4709.476753: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47450 [001]  4709.476773: sched:sched_switch: workload:47450 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4709.476781: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [003]  4709.480406: sched:sched_wakeup: rcu_preempt:15 [120] CPU:003
+         swapper       0 [003]  4709.480409: sched:sched_switch: swapper/3:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [003]  4709.480410: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/3:0 [120]
+         swapper       0 [003]  4709.484401: sched:sched_wakeup: rcu_preempt:15 [120] CPU:003
+         swapper       0 [003]  4709.484403: sched:sched_switch: swapper/3:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [003]  4709.484405: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/3:0 [120]
+         swapper       0 [003]  4709.488402: sched:sched_wakeup: rcu_preempt:15 [120] CPU:003
+         swapper       0 [003]  4709.488405: sched:sched_switch: swapper/3:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [003]  4709.488406: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/3:0 [120]
+         swapper       0 [003]  4709.492405: sched:sched_wakeup: rcu_preempt:15 [120] CPU:003
+         swapper       0 [003]  4709.492408: sched:sched_switch: swapper/3:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [003]  4709.492410: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/3:0 [120]
+        workload   47452 [000]  4709.542022: sched:sched_wakeup: multipathd:394 [89] CPU:000
+        workload   47452 [000]  4709.542027: sched:sched_switch: workload:47452 [120] R ==> multipathd:394 [89]
+      multipathd     394 [000]  4709.542042: sched:sched_wakeup: multipathd:373 [89] CPU:002
+        workload   47453 [002]  4709.542046: sched:sched_switch: workload:47453 [120] R ==> multipathd:373 [89]
+      multipathd     373 [002]  4709.542054: sched:sched_switch: multipathd:373 [89] S ==> workload:47453 [120]
+      multipathd     394 [000]  4709.542054: sched:sched_switch: multipathd:394 [89] S ==> workload:47452 [120]
+         swapper       0 [003]  4709.558920: sched:sched_wakeup: systemd-journal:325 [119] CPU:003
+         swapper       0 [003]  4709.558925: sched:sched_switch: swapper/3:0 [120] R ==> systemd-journal:325 [119]
+ systemd-journal     325 [003]  4709.559007: sched:sched_switch: systemd-journal:325 [119] S ==> swapper/3:0 [120]
+        workload   47452 [000]  4709.564187: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4709.564191: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4709.564204: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47453 [002]  4709.565189: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+        workload   47453 [002]  4709.565191: sched:sched_switch: workload:47453 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4709.565195: sched:sched_switch: kworker/2:2:144 [120] I ==> workload:47453 [120]
+         swapper       0 [003]  4709.572089: sched:sched_wakeup: slirp4netns:1091 [120] CPU:003
+         swapper       0 [003]  4709.572092: sched:sched_switch: swapper/3:0 [120] R ==> slirp4netns:1091 [120]
+     slirp4netns    1091 [003]  4709.572104: sched:sched_switch: slirp4netns:1091 [120] S ==> swapper/3:0 [120]
+        workload   47453 [002]  4709.591601: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4709.591791: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4709.696724: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4709.696734: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4709.696866: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4709.696873: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [003]  4709.706100: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4709.706106: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4709.706123: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4709.706164: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4709.706168: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4709.706229: sched:sched_wakeup: containerd:1135 [120] CPU:001
+      containerd    1143 [003]  4709.706230: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4709.706237: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4709.706261: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4709.706278: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4709.706283: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4709.706296: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4709.718656: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4709.718660: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4709.718666: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4709.740778: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4709.740786: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4709.740802: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4709.740807: sched:sched_wakeup: containerd:1135 [120] CPU:001
+      containerd    1143 [003]  4709.740807: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4709.740810: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4709.740815: sched:sched_switch: containerd:1129 [120] S ==> containerd:1135 [120]
+      containerd    1135 [001]  4709.740826: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4709.740840: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4709.740843: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4709.740850: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4709.752292: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4709.752295: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4709.752299: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4709.756190: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4709.756192: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4709.756206: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+        workload   47453 [002]  4709.756210: sched:sched_switch: workload:47453 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4709.756213: sched:sched_switch: kworker/2:2:144 [120] I ==> workload:47453 [120]
+ kworker/0:2-vir     176 [000]  4709.756214: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+         swapper       0 [001]  4709.756224: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+         swapper       0 [003]  4709.756225: sched:sched_wakeup: kworker/3:0:24200 [120] CPU:003
+         swapper       0 [001]  4709.756228: sched:sched_switch: swapper/1:0 [120] R ==> kworker/1:0:25257 [120]
+         swapper       0 [003]  4709.756228: sched:sched_switch: swapper/3:0 [120] R ==> kworker/3:0:24200 [120]
+ kworker/1:0-eve   25257 [001]  4709.756234: sched:sched_switch: kworker/1:0:25257 [120] I ==> swapper/1:0 [120]
+ kworker/3:0-eve   24200 [003]  4709.756235: sched:sched_switch: kworker/3:0:24200 [120] I ==> swapper/3:0 [120]
+         swapper       0 [001]  4709.784916: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4709.784919: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4709.784922: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4709.787911: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4709.787913: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4709.787932: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4709.787934: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4709.787937: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4709.787941: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4709.795419: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4709.795422: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4709.795425: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+        workload   47453 [002]  4709.829649: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4709.830715: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4709.857295: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4709.857299: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4709.857304: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4709.934758: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4709.934769: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4709.935229: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4709.935235: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47453 [002]  4710.068195: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4710.069279: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4710.110308: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4710.110321: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4710.110341: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4710.110352: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4710.110365: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4710.110370: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4710.110379: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4710.110383: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4710.110388: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4710.123001: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4710.123017: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4710.123034: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4710.144539: sched:sched_wakeup: kworker/3:0:24200 [120] CPU:003
+         swapper       0 [003]  4710.144546: sched:sched_switch: swapper/3:0 [120] R ==> kworker/3:0:24200 [120]
+ kworker/3:0-eve   24200 [003]  4710.144550: sched:sched_switch: kworker/3:0:24200 [120] I ==> swapper/3:0 [120]
+         swapper       0 [002]  4710.145234: sched:sched_wakeup: kworker/u16:0:47342 [120] CPU:002
+         swapper       0 [002]  4710.145239: sched:sched_switch: swapper/2:0 [120] R ==> kworker/u16:0:47342 [120]
+ kworker/u16:0-e   47342 [002]  4710.145250: sched:sched_switch: kworker/u16:0:47342 [120] I ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.145266: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:000
+         swapper       0 [000]  4710.145271: sched:sched_switch: swapper/0:0 [120] R ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [000]  4710.145275: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/0:0 [120]
+         swapper       0 [002]  4710.173302: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4710.173315: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4710.174233: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4710.174239: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47452 [000]  4710.306569: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [002]  4710.307111: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4710.369255: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4710.369262: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4710.369265: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4710.377749: sched:sched_wakeup: perf:47451 [120] CPU:002
+         swapper       0 [002]  4710.377755: sched:sched_switch: swapper/2:0 [120] R ==> perf:47451 [120]
+            perf   47451 [002]  4710.377783: sched:sched_switch: perf:47451 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.394778: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.394792: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.394810: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4710.394811: sched:sched_wakeup: lima-guestagent:21607 [120] CPU:003
+         swapper       0 [003]  4710.394816: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:21607 [120]
+         swapper       0 [002]  4710.394866: sched:sched_wakeup: lima-guestagent:819 [120] CPU:002
+         swapper       0 [002]  4710.394874: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:819 [120]
+ lima-guestagent     819 [002]  4710.394906: sched:sched_switch: lima-guestagent:819 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.394921: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.394928: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+         swapper       0 [001]  4710.394955: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+ lima-guestagent     815 [000]  4710.394959: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [001]  4710.394960: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent    1552 [001]  4710.394970: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [000]  4710.395058: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395063: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395068: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [000]  4710.395169: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395174: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395180: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [000]  4710.395267: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395271: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395276: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [000]  4710.395377: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395382: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395387: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [000]  4710.395487: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395492: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395496: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [000]  4710.395598: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395603: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395607: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4710.395690: sched:sched_wakeup: lima-guestagent:819 [120] CPU:002
+         swapper       0 [002]  4710.395698: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:819 [120]
+ lima-guestagent     819 [002]  4710.395708: sched:sched_switch: lima-guestagent:819 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.395716: sched:sched_wakeup: lima-guestagent:815 [120] CPU:000
+         swapper       0 [000]  4710.395722: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [000]  4710.395726: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/0:0 [120]
+         swapper       0 [001]  4710.395774: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+         swapper       0 [001]  4710.395780: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent    1552 [001]  4710.395802: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4710.395810: sched:sched_wakeup: lima-guestagent:817 [120] CPU:002
+         swapper       0 [002]  4710.395820: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:817 [120]
+         swapper       0 [000]  4710.395823: sched:sched_wakeup: lima-guestagent:819 [120] CPU:000
+ lima-guestagent     817 [002]  4710.395831: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.395842: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:819 [120]
+         swapper       0 [001]  4710.395849: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+ lima-guestagent     819 [000]  4710.395853: sched:sched_switch: lima-guestagent:819 [120] S ==> swapper/0:0 [120]
+         swapper       0 [001]  4710.395854: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+         swapper       0 [002]  4710.395854: sched:sched_wakeup: lima-guestagent:817 [120] CPU:002
+ lima-guestagent     815 [001]  4710.395858: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4710.395859: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [002]  4710.395875: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4710.395890: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+         swapper       0 [001]  4710.395894: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent    1552 [001]  4710.395901: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.395943: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.395947: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.395950: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396053: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.396058: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.396063: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396164: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.396169: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.396173: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+ lima-guestagent   21607 [003]  4710.396201: sched:sched_wakeup: kworker/3:0:24200 [120] CPU:003
+         swapper       0 [001]  4710.396277: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.396281: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.396286: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396388: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.396393: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.396397: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396499: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.396503: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.396508: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [000]  4710.396538: sched:sched_wakeup: lima-guestagent:819 [120] CPU:000
+         swapper       0 [000]  4710.396543: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:819 [120]
+         swapper       0 [001]  4710.396545: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+         swapper       0 [001]  4710.396552: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent     819 [000]  4710.396558: sched:sched_switch: lima-guestagent:819 [120] S ==> swapper/0:0 [120]
+ lima-guestagent    1552 [001]  4710.396559: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396598: sched:sched_wakeup: lima-guestagent:815 [120] CPU:001
+         swapper       0 [001]  4710.396606: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [001]  4710.396612: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/1:0 [120]
+         swapper       0 [000]  4710.396628: sched:sched_wakeup: lima-guestagent:819 [120] CPU:000
+         swapper       0 [000]  4710.396633: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:819 [120]
+         swapper       0 [001]  4710.396635: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+         swapper       0 [001]  4710.396640: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent     819 [000]  4710.396641: sched:sched_switch: lima-guestagent:819 [120] S ==> swapper/0:0 [120]
+ lima-guestagent    1552 [001]  4710.396647: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396660: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+         swapper       0 [001]  4710.396663: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent    1552 [001]  4710.396669: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.396678: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:001
+         swapper       0 [001]  4710.396694: sched:sched_switch: swapper/1:0 [120] R ==> lima-guestagent:1552 [120]
+ lima-guestagent    1552 [001]  4710.396699: sched:sched_wakeup: lima-guestagent:817 [120] CPU:001
+         swapper       0 [000]  4710.396701: sched:sched_wakeup: lima-guestagent:819 [120] CPU:000
+ lima-guestagent   21607 [003]  4710.396704: sched:sched_switch: lima-guestagent:21607 [120] S ==> kworker/3:0:24200 [120]
+         swapper       0 [002]  4710.396706: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [000]  4710.396707: sched:sched_switch: swapper/0:0 [120] R ==> lima-guestagent:819 [120]
+         swapper       0 [002]  4710.396711: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     819 [000]  4710.396714: sched:sched_switch: lima-guestagent:819 [120] S ==> swapper/0:0 [120]
+ kworker/3:0-eve   24200 [003]  4710.396717: sched:sched_switch: kworker/3:0:24200 [120] I ==> lima-guestagent:817 [120]
+ lima-guestagent     815 [002]  4710.396719: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+ lima-guestagent     817 [003]  4710.396721: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4710.396744: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+         swapper       0 [003]  4710.396748: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4710.396753: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4710.396819: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4710.396825: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4710.396830: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+ lima-guestagent    1552 [001]  4710.396899: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4710.396933: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4710.396938: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4710.396943: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.409151: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4710.409158: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [002]  4710.409735: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4710.409740: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [003]  4710.432676: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4710.432685: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4710.432701: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.432702: sched:sched_wakeup: containerd:1135 [120] CPU:001
+      containerd    1143 [003]  4710.432704: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4710.432706: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.432712: sched:sched_switch: containerd:1129 [120] S ==> containerd:1135 [120]
+      containerd    1135 [001]  4710.432719: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.442911: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.442915: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.442919: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4710.460193: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4710.460195: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4710.460198: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47452 [000]  4710.524190: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4710.524192: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4710.524195: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47452 [000]  4710.539636: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [002]  4710.540893: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4710.542529: sched:sched_wakeup: multipathd:394 [89] CPU:000
+         swapper       0 [000]  4710.542533: sched:sched_switch: swapper/0:0 [120] R ==> multipathd:394 [89]
+      multipathd     394 [000]  4710.542561: sched:sched_switch: multipathd:394 [89] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4710.542568: sched:sched_wakeup: multipathd:373 [89] CPU:002
+         swapper       0 [002]  4710.542571: sched:sched_switch: swapper/2:0 [120] R ==> multipathd:373 [89]
+      multipathd     373 [002]  4710.542577: sched:sched_switch: multipathd:373 [89] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4710.578163: sched:sched_wakeup: slirp4netns:1091 [120] CPU:003
+         swapper       0 [003]  4710.578177: sched:sched_switch: swapper/3:0 [120] R ==> slirp4netns:1091 [120]
+     slirp4netns    1091 [003]  4710.578204: sched:sched_switch: slirp4netns:1091 [120] S ==> swapper/3:0 [120]
+         swapper       0 [000]  4710.644750: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [002]  4710.644752: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [000]  4710.644763: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [002]  4710.644764: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [001]  4710.707288: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.707291: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.707295: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4710.711002: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4710.711005: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4710.711018: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4710.711029: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4710.711032: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4710.711036: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.717386: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.717389: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.717392: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.737546: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.737549: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+         swapper       0 [003]  4710.737551: sched:sched_wakeup: containerd:1143 [120] CPU:003
+      containerd    1129 [001]  4710.737552: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4710.737554: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4710.737565: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4710.737575: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4710.737579: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4710.737583: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.749209: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.749212: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.749216: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.750231: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.750234: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.750237: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4710.752641: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4710.752644: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4710.752657: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4710.752667: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4710.752670: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4710.752674: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4710.760563: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4710.760566: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4710.760569: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4710.777241: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [002]  4710.778279: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4710.780678: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+         swapper       0 [002]  4710.780682: sched:sched_switch: swapper/2:0 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4710.780686: sched:sched_switch: kworker/2:2:144 [120] I ==> swapper/2:0 [120]
+         swapper       0 [002]  4710.849254: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+         swapper       0 [002]  4710.849263: sched:sched_switch: swapper/2:0 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4710.849269: sched:sched_switch: kworker/2:2:144 [120] I ==> swapper/2:0 [120]
+         swapper       0 [002]  4710.881256: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4710.881276: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [003]  4710.881293: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4710.881299: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4710.881303: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [000]  4710.882231: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4710.882236: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47452 [000]  4710.883201: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4710.883205: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4710.883211: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47453 [002]  4710.908197: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+        workload   47453 [002]  4710.908198: sched:sched_switch: workload:47453 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4710.908204: sched:sched_switch: kworker/2:2:144 [120] I ==> workload:47453 [120]
+         swapper       0 [001]  4710.908453: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+         swapper       0 [001]  4710.908456: sched:sched_switch: swapper/1:0 [120] R ==> kworker/1:0:25257 [120]
+ kworker/1:0-eve   25257 [001]  4710.908463: sched:sched_switch: kworker/1:0:25257 [120] I ==> swapper/1:0 [120]
+        workload   47452 [000]  4710.909195: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4710.909197: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4710.909200: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47453 [002]  4711.014522: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4711.014799: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4711.038245: sched:sched_wakeup: gmain:891 [120] CPU:003
+         swapper       0 [001]  4711.038252: sched:sched_wakeup: gmain:880 [120] CPU:001
+         swapper       0 [003]  4711.038264: sched:sched_switch: swapper/3:0 [120] R ==> gmain:891 [120]
+         swapper       0 [001]  4711.038271: sched:sched_switch: swapper/1:0 [120] R ==> gmain:880 [120]
+           gmain     880 [001]  4711.038322: sched:sched_switch: gmain:880 [120] S ==> swapper/1:0 [120]
+           gmain     891 [003]  4711.038346: sched:sched_switch: gmain:891 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4711.039419: sched:sched_wakeup: kworker/3:0:24200 [120] CPU:003
+         swapper       0 [003]  4711.039433: sched:sched_switch: swapper/3:0 [120] R ==> kworker/3:0:24200 [120]
+ kworker/3:0-eve   24200 [003]  4711.039435: sched:sched_switch: kworker/3:0:24200 [120] I ==> swapper/3:0 [120]
+         swapper       0 [002]  4711.039447: sched:sched_wakeup: rcu_preempt:15 [120] CPU:002
+         swapper       0 [002]  4711.039450: sched:sched_switch: swapper/2:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [002]  4711.039455: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/2:0 [120]
+         swapper       0 [002]  4711.043415: sched:sched_wakeup: rcu_preempt:15 [120] CPU:002
+         swapper       0 [002]  4711.043419: sched:sched_switch: swapper/2:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [002]  4711.043421: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/2:0 [120]
+         swapper       0 [002]  4711.047493: sched:sched_wakeup: rcu_preempt:15 [120] CPU:002
+         swapper       0 [002]  4711.047496: sched:sched_switch: swapper/2:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [002]  4711.047500: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/2:0 [120]
+         swapper       0 [003]  4711.075037: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.075053: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.075076: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.075093: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4711.075107: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4711.075113: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.075121: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4711.075126: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4711.075131: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4711.087748: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4711.087763: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4711.087769: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4711.119628: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [000]  4711.119634: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [002]  4711.119639: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4711.119642: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [001]  4711.120226: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:001
+         swapper       0 [001]  4711.120232: sched:sched_switch: swapper/1:0 [120] R ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [001]  4711.120381: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/1:0 [120]
+        workload   47453 [002]  4711.165196: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+        workload   47453 [002]  4711.166195: sched:sched_switch: workload:47453 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4711.166200: sched:sched_switch: kworker/2:2:144 [120] I ==> workload:47453 [120]
+        workload   47453 [002]  4711.252623: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4711.253493: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4711.357726: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4711.357739: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4711.358242: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4711.358249: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [001]  4711.378223: sched:sched_wakeup: perf:47451 [120] CPU:001
+         swapper       0 [001]  4711.378228: sched:sched_switch: swapper/1:0 [120] R ==> perf:47451 [120]
+            perf   47451 [001]  4711.378239: sched:sched_switch: perf:47451 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.388219: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4711.388222: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4711.388225: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4711.393450: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.393459: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4711.393475: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4711.393476: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4711.393481: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1143 [003]  4711.393482: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+      containerd    1129 [001]  4711.393486: sched:sched_switch: containerd:1129 [120] S ==> containerd:1135 [120]
+      containerd    1135 [001]  4711.393498: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.393511: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.393515: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.393523: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.404629: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4711.404633: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4711.404637: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4711.420224: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:001
+         swapper       0 [001]  4711.420227: sched:sched_switch: swapper/1:0 [120] R ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [001]  4711.420237: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/1:0 [120]
+        workload   47453 [002]  4711.490788: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4711.491961: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [000]  4711.547616: sched:sched_wakeup: multipathd:394 [89] CPU:000
+         swapper       0 [000]  4711.547632: sched:sched_switch: swapper/0:0 [120] R ==> multipathd:394 [89]
+      multipathd     394 [000]  4711.547656: sched:sched_switch: multipathd:394 [89] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4711.547671: sched:sched_wakeup: multipathd:373 [89] CPU:002
+         swapper       0 [002]  4711.547676: sched:sched_switch: swapper/2:0 [120] R ==> multipathd:373 [89]
+      multipathd     373 [002]  4711.547682: sched:sched_switch: multipathd:373 [89] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4711.584268: sched:sched_wakeup: slirp4netns:1091 [120] CPU:003
+         swapper       0 [003]  4711.584278: sched:sched_switch: swapper/3:0 [120] R ==> slirp4netns:1091 [120]
+     slirp4netns    1091 [003]  4711.584292: sched:sched_switch: slirp4netns:1091 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4711.595890: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4711.595900: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4711.596237: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4711.596243: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [001]  4711.707292: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4711.707295: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4711.707299: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.707303: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.707306: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.707318: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.707327: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4711.707331: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4711.707339: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.707348: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.707351: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.707356: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4711.711182: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.711185: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.711204: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.711208: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4711.711211: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4711.711214: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4711.717387: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4711.717390: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4711.717393: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+        workload   47453 [002]  4711.729046: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4711.730443: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [001]  4711.738592: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4711.738606: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4711.738621: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.739554: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.739558: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.739573: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.739583: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4711.739586: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4711.739595: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4711.739605: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4711.739608: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4711.739614: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.750990: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4711.751005: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4711.751021: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4711.834153: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4711.834166: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4711.834245: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4711.834251: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47452 [000]  4711.835207: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4711.835210: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4711.835215: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+         swapper       0 [003]  4711.892233: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4711.892240: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4711.892242: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4711.892452: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:001
+         swapper       0 [001]  4711.892453: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+         swapper       0 [001]  4711.892455: sched:sched_switch: swapper/1:0 [120] R ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [001]  4711.892459: sched:sched_switch: kworker/u16:1:23903 [120] I ==> kworker/1:0:25257 [120]
+ kworker/1:0-eve   25257 [001]  4711.892462: sched:sched_switch: kworker/1:0:25257 [120] I ==> swapper/1:0 [120]
+        workload   47453 [002]  4711.966837: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+        workload   47452 [000]  4711.967919: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4712.033737: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [001]  4712.033740: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [003]  4712.033752: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4712.033755: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4712.033762: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+      containerd    1143 [003]  4712.033772: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4712.033779: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4712.033783: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4712.033788: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4712.046378: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [002]  4712.046380: sched:sched_wakeup: migration/2:29 [0] CPU:002
+         swapper       0 [001]  4712.046384: sched:sched_wakeup: migration/1:23 [0] CPU:001
+         swapper       0 [002]  4712.046395: sched:sched_switch: swapper/2:0 [120] R ==> migration/2:29 [0]
+         swapper       0 [001]  4712.046396: sched:sched_switch: swapper/1:0 [120] R ==> migration/1:23 [0]
+     migration/1      23 [001]  4712.046401: sched:sched_switch: migration/1:23 [0] S ==> containerd:1129 [120]
+     migration/2      29 [002]  4712.046403: sched:sched_switch: migration/2:29 [0] S ==> swapper/2:0 [120]
+      containerd    1129 [001]  4712.046405: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4712.049324: sched:sched_wakeup: migration/3:35 [0] CPU:003
+         swapper       0 [003]  4712.049330: sched:sched_switch: swapper/3:0 [120] R ==> migration/3:35 [0]
+     migration/3      35 [003]  4712.049334: sched:sched_switch: migration/3:35 [0] S ==> swapper/3:0 [120]
+         swapper       0 [000]  4712.050246: sched:sched_wakeup: migration/0:18 [0] CPU:000
+         swapper       0 [000]  4712.050261: sched:sched_switch: swapper/0:0 [120] R ==> migration/0:18 [0]
+     migration/0      18 [000]  4712.050264: sched:sched_switch: migration/0:18 [0] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4712.071946: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [000]  4712.071949: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [002]  4712.071960: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4712.071963: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47452 [000]  4712.204513: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [002]  4712.205604: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+         swapper       0 [000]  4712.309616: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4712.309629: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [002]  4712.310673: sched:sched_wakeup: workload:47453 [120] CPU:002
+         swapper       0 [002]  4712.310679: sched:sched_switch: swapper/2:0 [120] R ==> workload:47453 [120]
+        workload   47452 [000]  4712.316207: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+        workload   47452 [000]  4712.316208: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4712.316212: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+         swapper       0 [001]  4712.351260: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4712.351263: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4712.351267: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4712.356103: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4712.356106: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4712.356120: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4712.356130: sched:sched_wakeup: containerd:1135 [120] CPU:001
+         swapper       0 [001]  4712.356134: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [001]  4712.356138: sched:sched_switch: containerd:1135 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.361853: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4712.361857: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4712.361860: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.380259: sched:sched_wakeup: perf:47451 [120] CPU:001
+         swapper       0 [001]  4712.380262: sched:sched_switch: swapper/1:0 [120] R ==> perf:47451 [120]
+            perf   47451 [001]  4712.380267: sched:sched_switch: perf:47451 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4712.396239: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4712.396242: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4712.396243: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+        workload   47452 [000]  4712.442727: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [002]  4712.444202: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+        workload   47453 [002]  4712.444203: sched:sched_switch: workload:47453 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4712.444205: sched:sched_switch: kworker/2:2:144 [120] I ==> workload:47453 [120]
+        workload   47453 [002]  4712.444208: sched:sched_switch: workload:47453 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4712.513265: sched:sched_wakeup: kworker/2:2:144 [120] CPU:002
+         swapper       0 [002]  4712.513274: sched:sched_switch: swapper/2:0 [120] R ==> kworker/2:2:144 [120]
+ kworker/2:2-eve     144 [002]  4712.513279: sched:sched_switch: kworker/2:2:144 [120] I ==> swapper/2:0 [120]
+         swapper       0 [000]  4712.547828: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4712.547833: sched:sched_wakeup: multipathd:394 [89] CPU:000
+         swapper       0 [000]  4712.547843: sched:sched_switch: swapper/0:0 [120] R ==> multipathd:394 [89]
+      multipathd     394 [000]  4712.547863: sched:sched_switch: multipathd:394 [89] S ==> workload:47452 [120]
+         swapper       0 [002]  4712.547882: sched:sched_wakeup: multipathd:373 [89] CPU:002
+         swapper       0 [002]  4712.547901: sched:sched_switch: swapper/2:0 [120] R ==> multipathd:373 [89]
+      multipathd     373 [002]  4712.547912: sched:sched_switch: multipathd:373 [89] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4712.547922: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [001]  4712.547928: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [003]  4712.590313: sched:sched_wakeup: slirp4netns:1091 [120] CPU:003
+         swapper       0 [003]  4712.590317: sched:sched_switch: swapper/3:0 [120] R ==> slirp4netns:1091 [120]
+     slirp4netns    1091 [003]  4712.590324: sched:sched_switch: slirp4netns:1091 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4712.673638: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4712.673642: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4712.673645: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4712.673649: sched:sched_switch: containerd:1129 [120] S ==> containerd:1143 [120]
+      containerd    1143 [003]  4712.673661: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4712.673671: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4712.673674: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4712.673681: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4712.673690: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4712.673692: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4712.673708: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+        workload   47453 [001]  4712.681016: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4712.681945: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4712.686207: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4712.686210: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4712.686213: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4712.710703: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4712.710734: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4712.710750: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4712.710760: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [002]  4712.710763: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [001]  4712.710764: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+         swapper       0 [002]  4712.710768: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1129 [001]  4712.710768: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+      containerd    1135 [002]  4712.710778: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4712.710789: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4712.710793: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4712.710799: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4712.723386: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4712.723401: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4712.723405: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.740058: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4712.740074: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4712.740078: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4712.740866: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4712.740870: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4712.740885: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4712.740899: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4712.740904: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4712.740909: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4712.752691: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4712.752705: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4712.752710: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.767135: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+         swapper       0 [000]  4712.767140: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+         swapper       0 [001]  4712.767144: sched:sched_switch: swapper/1:0 [120] R ==> kworker/1:0:25257 [120]
+         swapper       0 [000]  4712.767145: sched:sched_switch: swapper/0:0 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4712.767148: sched:sched_switch: kworker/0:2:176 [120] I ==> swapper/0:0 [120]
+ kworker/1:0-eve   25257 [001]  4712.767150: sched:sched_switch: kworker/1:0:25257 [120] I ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.784596: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [001]  4712.784607: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4712.785252: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4712.785259: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47453 [001]  4712.828214: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+        workload   47453 [001]  4712.829208: sched:sched_switch: workload:47453 [120] R ==> kworker/1:0:25257 [120]
+ kworker/1:0-eve   25257 [001]  4712.829220: sched:sched_switch: kworker/1:0:25257 [120] I ==> workload:47453 [120]
+        workload   47453 [001]  4712.892206: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+        workload   47453 [001]  4712.892208: sched:sched_switch: workload:47453 [120] R ==> kworker/1:0:25257 [120]
+ kworker/1:0-eve   25257 [001]  4712.892212: sched:sched_switch: kworker/1:0:25257 [120] I ==> workload:47453 [120]
+         swapper       0 [003]  4712.900241: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4712.900248: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4712.900254: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+        workload   47452 [000]  4712.917618: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [001]  4712.918515: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.961278: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:001
+         swapper       0 [001]  4712.961283: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+         swapper       0 [001]  4712.961288: sched:sched_switch: swapper/1:0 [120] R ==> kworker/1:0:25257 [120]
+ kworker/1:0-eve   25257 [001]  4712.961292: sched:sched_switch: kworker/1:0:25257 [120] I ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [001]  4712.961305: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/1:0 [120]
+         swapper       0 [001]  4712.996193: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [003]  4712.996195: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [001]  4712.996209: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+         swapper       0 [003]  4712.996210: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1129 [001]  4712.996228: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4712.996269: sched:sched_wakeup: containerd:1135 [120] CPU:002
+      containerd    1143 [003]  4712.996269: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4712.996276: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4712.996287: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4713.008842: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4713.008853: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4713.008860: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4713.021043: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [001]  4713.021053: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4713.021246: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4713.021252: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47453 [001]  4713.084206: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+        workload   47453 [001]  4713.084209: sched:sched_switch: workload:47453 [120] R ==> kworker/1:0:25257 [120]
+ kworker/1:0-eve   25257 [001]  4713.084213: sched:sched_switch: kworker/1:0:25257 [120] I ==> workload:47453 [120]
+         swapper       0 [002]  4713.148242: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:002
+         swapper       0 [002]  4713.148245: sched:sched_switch: swapper/2:0 [120] R ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [002]  4713.148261: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/2:0 [120]
+        workload   47453 [001]  4713.154223: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4713.155460: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [001]  4713.259325: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [001]  4713.259339: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4713.260246: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4713.260252: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [003]  4713.313767: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4713.313772: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4713.313775: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4713.313778: sched:sched_switch: containerd:1129 [120] S ==> containerd:1143 [120]
+         swapper       0 [002]  4713.313802: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4713.313806: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1143 [003]  4713.313807: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+      containerd    1135 [002]  4713.313810: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4713.326344: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4713.326347: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4713.326351: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4713.381240: sched:sched_wakeup: perf:47451 [120] CPU:002
+         swapper       0 [002]  4713.381243: sched:sched_switch: swapper/2:0 [120] R ==> perf:47451 [120]
+            perf   47451 [002]  4713.381265: sched:sched_switch: perf:47451 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390247: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390250: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390264: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390360: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390363: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390366: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390463: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390466: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390469: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390566: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390569: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390572: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390669: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390672: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390674: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390770: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390773: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390776: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390872: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390874: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390877: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.390973: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.390975: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.390978: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.391074: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.391077: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.391080: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.391177: sched:sched_wakeup: lima-guestagent:815 [120] CPU:002
+         swapper       0 [002]  4713.391180: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [002]  4713.391182: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/2:0 [120]
+         swapper       0 [002]  4713.391238: sched:sched_wakeup: lima-guestagent:819 [120] CPU:002
+         swapper       0 [002]  4713.391241: sched:sched_switch: swapper/2:0 [120] R ==> lima-guestagent:819 [120]
+ lima-guestagent     819 [002]  4713.391270: sched:sched_wakeup: lima-guestagent:1552 [120] CPU:002
+         swapper       0 [003]  4713.391272: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391275: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391300: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391395: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391398: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391403: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+ lima-guestagent     815 [003]  4713.391405: sched:sched_switch: lima-guestagent:815 [120] S ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4713.391414: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391500: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391503: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391507: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391602: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391605: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391608: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391703: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391706: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391709: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391758: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+         swapper       0 [003]  4713.391763: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4713.391771: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391785: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391785: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+         swapper       0 [003]  4713.391788: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391791: sched:sched_switch: lima-guestagent:815 [120] S ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4713.391796: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391886: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391889: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391892: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.391990: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.391993: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.391996: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.392093: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.392096: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.392098: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.392175: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+         swapper       0 [003]  4713.392179: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.392181: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4713.392187: sched:sched_switch: lima-guestagent:817 [120] S ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.392188: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.392211: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+         swapper       0 [003]  4713.392213: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4713.392218: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.392262: sched:sched_wakeup: lima-guestagent:817 [120] CPU:003
+         swapper       0 [003]  4713.392266: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.392270: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.392273: sched:sched_switch: lima-guestagent:815 [120] S ==> lima-guestagent:817 [120]
+ lima-guestagent     817 [003]  4713.392278: sched:sched_switch: lima-guestagent:817 [120] S ==> swapper/3:0 [120]
+ lima-guestagent     819 [002]  4713.392342: sched:sched_switch: lima-guestagent:819 [120] S ==> lima-guestagent:1552 [120]
+ lima-guestagent    1552 [002]  4713.392348: sched:sched_switch: lima-guestagent:1552 [120] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4713.392368: sched:sched_wakeup: lima-guestagent:815 [120] CPU:003
+         swapper       0 [003]  4713.392371: sched:sched_switch: swapper/3:0 [120] R ==> lima-guestagent:815 [120]
+ lima-guestagent     815 [003]  4713.392374: sched:sched_switch: lima-guestagent:815 [120] S ==> swapper/3:0 [120]
+        workload   47453 [001]  4713.392738: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4713.394326: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4713.406772: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4713.406775: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4713.406777: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4713.497838: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [001]  4713.497850: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4713.498250: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4713.498256: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+        workload   47452 [000]  4713.547873: sched:sched_wakeup: multipathd:394 [89] CPU:000
+        workload   47452 [000]  4713.547877: sched:sched_switch: workload:47452 [120] R ==> multipathd:394 [89]
+         swapper       0 [002]  4713.547912: sched:sched_wakeup: multipathd:373 [89] CPU:002
+         swapper       0 [002]  4713.547915: sched:sched_switch: swapper/2:0 [120] R ==> multipathd:373 [89]
+      multipathd     394 [000]  4713.547917: sched:sched_switch: multipathd:394 [89] S ==> workload:47452 [120]
+      multipathd     373 [002]  4713.547928: sched:sched_switch: multipathd:373 [89] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4713.596362: sched:sched_wakeup: slirp4netns:1091 [120] CPU:003
+         swapper       0 [003]  4713.596365: sched:sched_switch: swapper/3:0 [120] R ==> slirp4netns:1091 [120]
+     slirp4netns    1091 [003]  4713.596382: sched:sched_switch: slirp4netns:1091 [120] S ==> swapper/3:0 [120]
+        workload   47453 [001]  4713.630869: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4713.631833: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [003]  4713.636134: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4713.636140: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4713.636153: sched:sched_wakeup: containerd:1129 [120] CPU:001
+      containerd    1143 [003]  4713.636153: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4713.636156: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4713.636160: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4713.636164: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4713.636166: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4713.636171: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4713.648776: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4713.648792: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4713.648808: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4713.710280: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4713.710292: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+      containerd    1143 [003]  4713.710312: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4713.710326: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4713.710332: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4713.710339: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4713.711105: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4713.711110: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4713.711116: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4713.723730: sched:sched_wakeup: containerd:1129 [120] CPU:001
+         swapper       0 [001]  4713.723740: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4713.723746: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [001]  4713.732766: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [000]  4713.732773: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [001]  4713.732779: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [000]  4713.732783: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [003]  4713.736733: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4713.736742: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4713.736747: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4713.736753: sched:sched_switch: containerd:1129 [120] S ==> containerd:1143 [120]
+      containerd    1143 [003]  4713.736775: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [002]  4713.736790: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4713.736796: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4713.736803: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [003]  4713.749326: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4713.749331: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4713.749337: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+        workload   47453 [001]  4713.788212: sched:sched_wakeup: kworker/1:0:25257 [120] CPU:001
+        workload   47453 [001]  4713.788213: sched:sched_switch: workload:47453 [120] R ==> kworker/1:0:25257 [120]
+        workload   47452 [000]  4713.788214: sched:sched_wakeup: kworker/0:2:176 [120] CPU:000
+ kworker/1:0-eve   25257 [001]  4713.788217: sched:sched_switch: kworker/1:0:25257 [120] I ==> workload:47453 [120]
+        workload   47452 [000]  4713.789210: sched:sched_switch: workload:47452 [120] R ==> kworker/0:2:176 [120]
+ kworker/0:2-vir     176 [000]  4713.789214: sched:sched_switch: kworker/0:2:176 [120] I ==> workload:47452 [120]
+        workload   47452 [000]  4713.865122: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+        workload   47453 [001]  4713.866091: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+         swapper       0 [003]  4713.913297: sched:sched_wakeup: kcompactd0:49 [120] CPU:003
+         swapper       0 [003]  4713.913301: sched:sched_switch: swapper/3:0 [120] R ==> kcompactd0:49 [120]
+      kcompactd0      49 [003]  4713.913304: sched:sched_switch: kcompactd0:49 [120] S ==> swapper/3:0 [120]
+         swapper       0 [003]  4713.958042: sched:sched_wakeup: containerd:1143 [120] CPU:003
+         swapper       0 [003]  4713.958061: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1143 [120]
+         swapper       0 [001]  4713.958079: sched:sched_wakeup: containerd:1129 [120] CPU:001
+      containerd    1143 [003]  4713.958083: sched:sched_switch: containerd:1143 [120] S ==> swapper/3:0 [120]
+         swapper       0 [001]  4713.958085: sched:sched_switch: swapper/1:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [001]  4713.958092: sched:sched_switch: containerd:1129 [120] S ==> swapper/1:0 [120]
+         swapper       0 [002]  4713.958099: sched:sched_wakeup: containerd:1135 [120] CPU:002
+         swapper       0 [002]  4713.958105: sched:sched_switch: swapper/2:0 [120] R ==> containerd:1135 [120]
+      containerd    1135 [002]  4713.958112: sched:sched_switch: containerd:1135 [120] S ==> swapper/2:0 [120]
+         swapper       0 [001]  4713.968208: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [000]  4713.968214: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4713.968225: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+         swapper       0 [001]  4713.968228: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+         swapper       0 [003]  4713.968248: sched:sched_wakeup: containerd:1129 [120] CPU:003
+         swapper       0 [003]  4713.968254: sched:sched_switch: swapper/3:0 [120] R ==> containerd:1129 [120]
+      containerd    1129 [003]  4713.968261: sched:sched_switch: containerd:1129 [120] S ==> swapper/3:0 [120]
+        workload   47453 [001]  4714.100766: sched:sched_switch: workload:47453 [120] S ==> swapper/1:0 [120]
+        workload   47452 [000]  4714.101409: sched:sched_switch: workload:47452 [120] S ==> swapper/0:0 [120]
+         swapper       0 [001]  4714.205869: sched:sched_wakeup: workload:47453 [120] CPU:001
+         swapper       0 [001]  4714.205880: sched:sched_switch: swapper/1:0 [120] R ==> workload:47453 [120]
+             :-1      -1 [001]  4714.206025: sched:sched_switch: workload:47453 [120] X ==> swapper/1:0 [120]
+         swapper       0 [002]  4714.206301: sched:sched_wakeup: rcu_preempt:15 [120] CPU:002
+         swapper       0 [002]  4714.206307: sched:sched_switch: swapper/2:0 [120] R ==> rcu_preempt:15 [120]
+     rcu_preempt      15 [002]  4714.206312: sched:sched_switch: rcu_preempt:15 [120] I ==> swapper/2:0 [120]
+         swapper       0 [000]  4714.206479: sched:sched_wakeup: workload:47452 [120] CPU:000
+         swapper       0 [000]  4714.206485: sched:sched_switch: swapper/0:0 [120] R ==> workload:47452 [120]
+             :-1      -1 [000]  4714.206521: sched:sched_switch: workload:47452 [120] X ==> swapper/0:0 [120]
+         swapper       0 [001]  4714.206529: sched:sched_wakeup: workload:47450 [120] CPU:001
+         swapper       0 [001]  4714.206534: sched:sched_switch: swapper/1:0 [120] R ==> workload:47450 [120]
+         swapper       0 [002]  4714.206587: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:002
+         swapper       0 [002]  4714.206593: sched:sched_switch: swapper/2:0 [120] R ==> kworker/u16:1:23903 [120]
+ kworker/u16:1-e   23903 [002]  4714.206607: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/2:0 [120]
+         swapper       0 [000]  4714.206628: sched:sched_wakeup: sudo:47446 [120] CPU:000
+         swapper       0 [000]  4714.206633: sched:sched_switch: swapper/0:0 [120] R ==> sudo:47446 [120]
+          :47450   47450 [001]  4714.206702: sched:sched_switch: workload:47450 [120] Z ==> swapper/1:0 [120]
+            sudo   47446 [000]  4714.206712: sched:sched_switch: sudo:47446 [120] S ==> swapper/0:0 [120]
+         swapper       0 [002]  4714.206719: sched:sched_wakeup: kworker/u16:1:23903 [120] CPU:002
+         swapper       0 [003]  4714.206721: sched:sched_wakeup: perf:47449 [120] CPU:003
+         swapper       0 [002]  4714.206724: sched:sched_switch: swapper/2:0 [120] R ==> kworker/u16:1:23903 [120]
+         swapper       0 [003]  4714.206727: sched:sched_switch: swapper/3:0 [120] R ==> perf:47449 [120]
+ kworker/u16:1-e   23903 [002]  4714.206740: sched:sched_switch: kworker/u16:1:23903 [120] I ==> swapper/2:0 [120]
+         swapper       0 [001]  4714.206758: sched:sched_wakeup: sshd-session:1546 [120] CPU:001
+         swapper       0 [001]  4714.206763: sched:sched_switch: swapper/1:0 [120] R ==> sshd-session:1546 [120]
+            perf   47449 [003]  4714.206787: sched:sched_wakeup: migration/3:35 [0] CPU:003
+            perf   47449 [003]  4714.206790: sched:sched_switch: perf:47449 [120] R ==> migration/3:35 [0]
+     migration/3      35 [003]  4714.206807: sched:sched_switch: migration/3:35 [0] S ==> swapper/3:0 [120]
+         swapper       0 [000]  4714.206827: sched:sched_switch: swapper/0:0 [120] R ==> perf:47449 [120]
+    sshd-session    1546 [001]  4714.206875: sched:sched_switch: sshd-session:1546 [120] S ==> perf:47449 [120]
+         swapper       0 [002]  4714.206931: sched:sched_switch: swapper/2:0 [120] R ==> perf:47449 [120]
+         swapper       0 [003]  4714.207016: sched:sched_switch: swapper/3:0 [120] R ==> perf:47449 [120]

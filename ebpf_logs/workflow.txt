@@ -1,0 +1,22 @@
+User program starts
+|
+Load eBPF into kernel
+|
+Attach to scheduler tracepoints
+|
+Fork workload process
+|
+Send workload TGID to kernel map
+|
+Kernel monitors scheduler events
+|
+Kernel sends events via ring buffer
+|
+User-space receives events
+|
+Print logs
+|
+Workload exits
+|
+Program exits
+

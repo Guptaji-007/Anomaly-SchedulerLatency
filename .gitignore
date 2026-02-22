@@ -1,0 +1,110 @@
+# =========================
+# Compiled C binaries
+# =========================
+*.o
+*.out
+*.exe
+*.a
+*.so
+
+# eBPF compiled objects
+*.bpf.o
+*.skel.h
+
+# User compiled programs
+slu
+workload
+*.bin
+
+# =========================
+# Build directories
+# =========================
+build/
+dist/
+bin/
+obj/
+
+# =========================
+# Perf output files
+# =========================
+perf.data
+perf.data.old
+perf_script.txt
+perf_latency.txt
+
+# =========================
+# eBPF logs and outputs
+# =========================
+*.log
+*.csv
+*.txt
+
+# your project specific logs folder
+ebpf_logs/
+logs/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# virtual environments
+venv/
+.env/
+.envrc
+
+# =========================
+# Editor / IDE
+# =========================
+
+# VS Code
+.vscode/
+
+# CLion / JetBrains
+.idea/
+
+# Vim
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+
+# =========================
+# bpftool outputs
+# =========================
+bpftool_output.txt
+
+# =========================
+# Debug files
+# =========================
+core
+core.*
+
+# =========================
+# Generated headers
+# =========================
+vmlinux.h
+
+# =========================
+# CMake
+# =========================
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# =========================
+# Misc
+# =========================
+*.bak
+*.orig

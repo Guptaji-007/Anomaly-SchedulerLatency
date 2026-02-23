@@ -6,13 +6,13 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-
+/* ===== Event structure ===== */
 struct event {
     unsigned int pid;
     unsigned long long latency_ns;
 };
 
-
+/* ===== Ring buffer callback ===== */
 static int handle_event(void *ctx, void *data, size_t len)
 {
     struct event *e = data;
@@ -24,107 +24,82 @@ static int handle_event(void *ctx, void *data, size_t len)
     return 0;
 }
 
-
-
 int main()
 {
     struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
-
     setrlimit(RLIMIT_MEMLOCK, &r);
+
     setvbuf(stdout, NULL, _IONBF, 0);
 
+    /* ===== Open BPF object ===== */
+    struct bpf_object *obj =
+        bpf_object__open_file("sl.bpf.o", NULL);
 
-    struct bpf_object *obj;
-
-    obj = bpf_object__open_file("sl.bpf.o", NULL);
-
-    if (!obj)
-    {
-        printf("open failed\n");
+    if (!obj) {
+        printf("Failed to open BPF object\n");
         return 1;
     }
 
-
-    if (bpf_object__load(obj))
-    {
-        printf("load failed\n");
+    if (bpf_object__load(obj)) {
+        printf("Failed to load BPF object\n");
         return 1;
     }
 
-
-
-    /* attach programs */
+    /* ===== Attach programs ===== */
     struct bpf_program *prog;
+    struct bpf_link *link;
 
-    bpf_object__for_each_program(prog, obj)
-        bpf_program__attach(prog);
+    bpf_object__for_each_program(prog, obj) {
+        link = bpf_program__attach(prog);
+        if (!link) {
+            printf("Attach failed\n");
+            return 1;
+        }
+    }
 
-
-
-    /* start workload */
+    /* ===== Start workload ===== */
     pid_t pid = fork();
 
-
-    if (pid == 0)
-    {
+    if (pid == 0) {
         execl("./workload", "workload", NULL);
-
         exit(0);
     }
 
-
     printf("Workload PID: %d\n", pid);
 
-
-
-    /* update target map */
+    /* ===== Set target TGID ===== */
     __u32 key = 0;
-
     __u32 value = pid;
 
+    int map_fd = bpf_object__find_map_fd_by_name(obj, "target_tgid_map");
 
-    int map_fd;
+    if (map_fd < 0) {
+        printf("Map not found\n");
+        return 1;
+    }
 
-    map_fd = bpf_object__find_map_fd_by_name(obj,
-                                             "target_tgid_map");
+    bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
 
+    /* ===== Create ring buffer ===== */
+    map_fd = bpf_object__find_map_fd_by_name(obj, "events");
 
-    bpf_map_update_elem(map_fd,
-                        &key,
-                        &value,
-                        BPF_ANY);
+    struct ring_buffer *rb =
+        ring_buffer__new(map_fd, handle_event, NULL, NULL);
 
+    if (!rb) {
+        printf("Ring buffer failed\n");
+        return 1;
+    }
 
-
-    /* ring buffer */
-    struct ring_buffer *rb;
-
-    map_fd = bpf_object__find_map_fd_by_name(obj,
-                                             "events");
-
-
-    rb = ring_buffer__new(map_fd,
-                          handle_event,
-                          NULL,
-                          NULL);
-
-
-
+    /* ===== Poll events ===== */
     int status;
-
-
-
-    while (1)
-    {
+    while (1) {
         ring_buffer__poll(rb, 100);
 
         if (waitpid(pid, &status, WNOHANG) == pid)
             break;
     }
 
-
-
-    return 0;    obj = bpf_object__open_file("sched_latency.bpf.o", NULL);
-
+    printf("Workload finished\n");
+    return 0;
 }
-

@@ -52,6 +52,7 @@ int handle_wakeup(struct trace_event_raw_sched_wakeup_template *ctx)
 {
     __u32 pid = ctx->pid;
 
+    if(!is_target_pid(pid))return 0;
     /* record wakeup timestamp for ALL tasks */
     __u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&wakeup_map, &pid, &ts, BPF_ANY);

@@ -61,7 +61,7 @@ int main()
     pid_t pid = fork();
 
     if (pid == 0) {
-        execl("./workload", "workload", NULL);
+        execl("../workload/workload", "workload", NULL);
         exit(0);
     }
 

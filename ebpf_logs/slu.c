@@ -5,6 +5,7 @@
 #include <bpf/bpf.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 /* ===== Event structure ===== */
 struct event {
@@ -71,7 +72,8 @@ int main()
     __u32 key = 0;
     __u32 value = pid;
 
-    int map_fd = bpf_object__find_map_fd_by_name(obj, "target_tgid_map");
+    int map_fd =
+        bpf_object__find_map_fd_by_name(obj, "target_tgid_map");
 
     if (map_fd < 0) {
         printf("Map not found\n");

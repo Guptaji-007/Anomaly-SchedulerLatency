@@ -10,18 +10,18 @@ struct {
     __type(value, __u32);
 } target_tgid_map SEC(".maps");
 
-/* ===== Wakeup timestamp map (key = TID) ===== */
+/* ===== Runqueue timestamp map (key = TID) ===== */
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, 65536);
     __type(key, __u32);
     __type(value, __u64);
-} wakeup_map SEC(".maps");
+} wait_map SEC(".maps");
 
 /* ===== Output event ===== */
 struct event {
-    __u32 pid;          // thread id
-    __u64 latency_ns;   // scheduling latency
+    __u32 pid;
+    __u64 latency_ns;
 };
 
 /* ===== Ring buffer ===== */
@@ -30,7 +30,7 @@ struct {
     __uint(max_entries, 1 << 24);
 } events SEC(".maps");
 
-/* ===== Check if task belongs to workload process ===== */
+/* ===== Check if task belongs to workload TGID ===== */
 static __always_inline int is_target_pid(__u32 pid)
 {
     __u32 key = 0;
@@ -41,21 +41,25 @@ static __always_inline int is_target_pid(__u32 pid)
     struct task_struct *task = bpf_task_from_pid(pid);
     if (!task)
         return 0;
-    int match = (task-> tgid == *target_tgid);
-  bpf_task_release(task);
-    return match; 
+
+    int match = (task->tgid == *target_tgid);
+    bpf_task_release(task);
+
+    return match;
 }
 
 /* ===== Wakeup tracepoint ===== */
+/* Sleeping -> Runnable */
 SEC("tracepoint/sched/sched_wakeup")
 int handle_wakeup(struct trace_event_raw_sched_wakeup_template *ctx)
 {
     __u32 pid = ctx->pid;
 
-    if(!is_target_pid(pid))return 0;
-    /* record wakeup timestamp for ALL tasks */
+    if (!is_target_pid(pid))
+        return 0;
+
     __u64 ts = bpf_ktime_get_ns();
-    bpf_map_update_elem(&wakeup_map, &pid, &ts, BPF_ANY);
+    bpf_map_update_elem(&wait_map, &pid, &ts, BPF_ANY);
 
     return 0;
 }
@@ -64,28 +68,45 @@ int handle_wakeup(struct trace_event_raw_sched_wakeup_template *ctx)
 SEC("tracepoint/sched/sched_switch")
 int handle_switch(struct trace_event_raw_sched_switch *ctx)
 {
-    __u32 pid = ctx->next_pid;
+    __u64 now = bpf_ktime_get_ns();
 
-    /* only measure workload tasks */
-    if (!is_target_pid(pid))
+    /* ========================= */
+    /* Case 1: Preemption wait  */
+    /* Running -> Runnable      */
+    /* ========================= */
+    __u32 prev_pid = ctx->prev_pid;
+    long prev_state = ctx->prev_state;
+
+    /* prev_state == 0 means TASK_RUNNING */
+    if (prev_state == 0 && is_target_pid(prev_pid)) {
+        bpf_map_update_elem(&wait_map, &prev_pid, &now, BPF_ANY);
+    }
+
+    /* ========================= */
+    /* Case 2: Runnable -> Run  */
+    /* ========================= */
+    __u32 next_pid = ctx->next_pid;
+
+    if (!is_target_pid(next_pid))
         return 0;
 
-    __u64 *wakeup_ts = bpf_map_lookup_elem(&wakeup_map, &pid);
-    if (!wakeup_ts)
+    __u64 *start_ts = bpf_map_lookup_elem(&wait_map, &next_pid);
+    if (!start_ts)
         return 0;
 
-    __u64 latency = bpf_ktime_get_ns() - *wakeup_ts;
+    __u64 latency = now - *start_ts;
 
     struct event *e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
     if (!e)
         return 0;
 
-    e->pid = pid;
+    e->pid = next_pid;
     e->latency_ns = latency;
 
     bpf_ringbuf_submit(e, 0);
 
-    bpf_map_delete_elem(&wakeup_map, &pid);
+    bpf_map_delete_elem(&wait_map, &next_pid);
+
     return 0;
 }
 

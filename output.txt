@@ -22,3 +22,25 @@ Runqueue Latency avg (us): 43.930
 Captured: 43467
 eBPF avg (us): 45.95793038396945
 
+
+disk.c 
+Captured: 147958
+eBPF avg (us): 19.397808905229862
+Captured: 40646 runqueue wait events for 'workload'
+Runqueue Latency avg (us): 17.642
+
+pipeio.c 
+Captured: 35229 runqueue wait events for 'workload'
+Runqueue Latency avg (us): 3.013
+Captured: 32015
+eBPF avg (us): 2.47384007496486
+
+yield.c 
+Captured: 3475644
+eBPF avg (us): 4.3657338352259325
+Captured: 220685 runqueue wait events for 'workload'
+Runqueue Latency avg (us): 8.070
+
+
+
+// for mixed no conclusion-> yet

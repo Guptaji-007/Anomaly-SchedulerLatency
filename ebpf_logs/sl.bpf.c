@@ -1,113 +1,116 @@
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
+#include <bpf/bpf_core_read.h>
 
-/* ===== Target TGID map (set from user space) ===== */
-struct {
-    __uint(type, BPF_MAP_TYPE_ARRAY);
-    __uint(max_entries, 1);
-    __type(key, __u32);
-    __type(value, __u32);
-} target_tgid_map SEC(".maps");
+char LICENSE[] SEC("license") = "GPL";
 
-/* ===== Runqueue timestamp map (key = TID) ===== */
+/* =================================================
+ * MAPS
+ * ================================================= */
+
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
-    __uint(max_entries, 65536);
-    __type(key, __u32);
-    __type(value, __u64);
-} wait_map SEC(".maps");
+    __uint(max_entries, 1);
+    __type(key, u32);
+    __type(value, u32);
+} target_tgid_map SEC(".maps");
 
-/* ===== Output event ===== */
-struct event {
-    __u32 pid;
-    __u64 latency_ns;
-};
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, u32);
+    __type(value, u64);
+} start SEC(".maps");
 
-/* ===== Ring buffer ===== */
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 1 << 24);
+    __uint(max_entries, 256 * 1024);
 } events SEC(".maps");
 
-/* ===== Check if task belongs to workload TGID ===== */
-static __always_inline int is_target_pid(__u32 pid)
+/* =================================================
+ * ENRICHED EVENT STRUCTURE
+ * ================================================= */
+struct event {
+    u32 pid;
+    u64 latency_ns;
+    u32 cpu_id;
+    int priority;
+};
+
+/* =================================================
+ * TRACEPOINT HOOKS
+ * ================================================= */
+
+/* Hook 1: sched_wakeup (For tasks waking from sleep/IO) */
+SEC("tp_btf/sched_wakeup")
+int BPF_PROG(sched_wakeup, struct task_struct *p)
 {
-    __u32 key = 0;
-    __u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
-    if (!target_tgid)
-        return 0;
-
-    struct task_struct *task = bpf_task_from_pid(pid);
-    if (!task)
-        return 0;
-
-    int match = (task->tgid == *target_tgid);
-    bpf_task_release(task);
-
-    return match;
-}
-
-/* ===== Wakeup tracepoint ===== */
-/* Sleeping -> Runnable */
-SEC("tracepoint/sched/sched_wakeup")
-int handle_wakeup(struct trace_event_raw_sched_wakeup_template *ctx)
-{
-    __u32 pid = ctx->pid;
-
-    if (!is_target_pid(pid))
-        return 0;
-
-    __u64 ts = bpf_ktime_get_ns();
-    bpf_map_update_elem(&wait_map, &pid, &ts, BPF_ANY);
-
+    u32 pid = p->pid;
+    u64 ts = bpf_ktime_get_ns();
+    bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
     return 0;
 }
 
-/* ===== Context switch tracepoint ===== */
-SEC("tracepoint/sched/sched_switch")
-int handle_switch(struct trace_event_raw_sched_switch *ctx)
+SEC("tp_btf/sched_wakeup_new")
+int BPF_PROG(sched_wakeup_new, struct task_struct *p)
 {
-    __u64 now = bpf_ktime_get_ns();
+    u32 pid = p->pid;
+    u64 ts = bpf_ktime_get_ns();
+    bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
+    return 0;
+}
 
-    /* ========================= */
-    /* Case 1: Preemption wait  */
-    /* Running -> Runnable      */
-    /* ========================= */
-    __u32 prev_pid = ctx->prev_pid;
-    long prev_state = ctx->prev_state;
-
-    /* prev_state == 0 means TASK_RUNNING */
-    if (prev_state == 0 && is_target_pid(prev_pid)) {
-        bpf_map_update_elem(&wait_map, &prev_pid, &now, BPF_ANY);
+/* Hook 3: sched_switch (The core latency calculator) */
+SEC("tp_btf/sched_switch")
+int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_struct *next)
+{
+    u64 ts = bpf_ktime_get_ns();
+    
+    // -----------------------------------------------------------
+    // 🔹 THE FIX: RECORD THE TASK BEING PREEMPTED
+    // If the task leaving the CPU is still in TASK_RUNNING (0), 
+    // it was preempted. Record the time it entered the runqueue.
+    // -----------------------------------------------------------
+  // Directly read the modern __state field
+    long state = BPF_CORE_READ(prev, __state);
+    
+    // state 0 means TASK_RUNNING (the task was preempted, not sleeping)
+    if (state == 0) { 
+        u32 prev_pid = prev->pid;
+        bpf_map_update_elem(&start, &prev_pid, &ts, BPF_ANY);
     }
 
-    /* ========================= */
-    /* Case 2: Runnable -> Run  */
-    /* ========================= */
-    __u32 next_pid = ctx->next_pid;
+    // -----------------------------------------------------------
+    // 🔹 CALCULATE LATENCY FOR TASK GETTING THE CPU
+    // -----------------------------------------------------------
+    u32 next_pid = next->pid;
+    u32 next_tgid = next->tgid;
 
-    if (!is_target_pid(next_pid))
-        return 0;
+    // Filter by our target workload TGID
+    u32 key = 0;
+    u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
+    if (!target_tgid || *target_tgid != next_tgid) {
+        return 0; // Ignore background system tasks
+    }
 
-    __u64 *start_ts = bpf_map_lookup_elem(&wait_map, &next_pid);
-    if (!start_ts)
-        return 0;
+    u64 *tsp = bpf_map_lookup_elem(&start, &next_pid);
+    if (!tsp) {
+        return 0; /* Task start time wasn't recorded */
+    }
 
-    __u64 latency = now - *start_ts;
+    u64 latency = ts - *tsp;
+    bpf_map_delete_elem(&start, &next_pid);
 
+    /* Send Data to User Space via Ring Buffer */
     struct event *e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
-    if (!e)
-        return 0;
+    if (!e) return 0;
 
     e->pid = next_pid;
     e->latency_ns = latency;
+    e->cpu_id = bpf_get_smp_processor_id(); 
+    e->priority = next->prio; 
 
     bpf_ringbuf_submit(e, 0);
-
-    bpf_map_delete_elem(&wait_map, &next_pid);
-
     return 0;
 }
-
-char LICENSE[] SEC("license") = "GPL";

@@ -46,6 +46,15 @@ struct event {
 SEC("tp_btf/sched_wakeup")
 int BPF_PROG(sched_wakeup, struct task_struct *p)
 {
+    u32 tgid = p->tgid;
+    
+    // Filter by target workload only
+    u32 key = 0;
+    u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
+    if (!target_tgid || *target_tgid != tgid) {
+        return 0; // Ignore non-target processes
+    }
+    
     u32 pid = p->pid;
     u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
@@ -55,6 +64,15 @@ int BPF_PROG(sched_wakeup, struct task_struct *p)
 SEC("tp_btf/sched_wakeup_new")
 int BPF_PROG(sched_wakeup_new, struct task_struct *p)
 {
+    u32 tgid = p->tgid;
+    
+    // Filter by target workload only
+    u32 key = 0;
+    u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
+    if (!target_tgid || *target_tgid != tgid) {
+        return 0; // Ignore non-target processes
+    }
+    
     u32 pid = p->pid;
     u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
@@ -67,18 +85,28 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
 {
     u64 ts = bpf_ktime_get_ns();
     
+    // Get target TGID for filtering
+    u32 key = 0;
+    u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
+    if (!target_tgid) {
+        return 0;
+    }
+    
     // -----------------------------------------------------------
-    // 🔹 THE FIX: RECORD THE TASK BEING PREEMPTED
+    // 🔹 THE FIX: RECORD THE TASK BEING PREEMPTED (if target)
     // If the task leaving the CPU is still in TASK_RUNNING (0), 
     // it was preempted. Record the time it entered the runqueue.
     // -----------------------------------------------------------
-  // Directly read the modern __state field
     long state = BPF_CORE_READ(prev, __state);
     
     // state 0 means TASK_RUNNING (the task was preempted, not sleeping)
     if (state == 0) { 
-        u32 prev_pid = prev->pid;
-        bpf_map_update_elem(&start, &prev_pid, &ts, BPF_ANY);
+        u32 prev_tgid = prev->tgid;
+        // Only record preemption of target workload
+        if (*target_tgid == prev_tgid) {
+            u32 prev_pid = prev->pid;
+            bpf_map_update_elem(&start, &prev_pid, &ts, BPF_ANY);
+        }
     }
 
     // -----------------------------------------------------------
@@ -88,9 +116,7 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     u32 next_tgid = next->tgid;
 
     // Filter by our target workload TGID
-    u32 key = 0;
-    u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
-    if (!target_tgid || *target_tgid != next_tgid) {
+    if (*target_tgid != next_tgid) {
         return 0; // Ignore background system tasks
     }
 

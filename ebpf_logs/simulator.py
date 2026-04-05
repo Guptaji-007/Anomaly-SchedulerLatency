@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import os
 
 st.set_page_config(page_title="eBPF Scheduler Anomaly Detector", layout="wide")
 st.title("🚀 Scheduler Latency Analysis Dashboard")
@@ -17,6 +18,13 @@ def load_data():
         return df
     except Exception as e:
         return pd.DataFrame()
+
+# ==============================
+# 📌 CHECK WORKLOAD STATUS
+# ==============================
+def is_workload_running():
+    """Check if the workload.running flag file exists"""
+    return os.path.exists("workload.running")
 
 # ==============================
 # 📌 ROOT CAUSE DETECTION (System View)
@@ -47,6 +55,9 @@ def map_label(row):
 if "history" not in st.session_state:
     st.session_state.history = pd.DataFrame()
 
+if "workload_stopped" not in st.session_state:
+    st.session_state.workload_stopped = False
+
 # ==============================
 # 📌 UI PLACEHOLDER
 # ==============================
@@ -56,7 +67,33 @@ chart_placeholder = st.empty()
 # 📌 LIVE LOOP
 # ==============================
 while True:
+    workload_running = is_workload_running()
     df = load_data()
+
+    if not workload_running and st.session_state.workload_stopped:
+        # Workload has already stopped - show final state and exit gracefully
+        with chart_placeholder.container():
+            st.error("🛑 **WORKLOAD STOPPED** - Collection Complete")
+            
+            if not df.empty:
+                latest = df.iloc[-1]
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Final P99 Latency (us)", f"{latest['p99_lat']:.2f}")
+                col2.metric("Total Switches", int(latest['switch_count']))
+                col3.metric("Final Symptom", latest['cause'])
+                col4.metric("Final State", latest['workload_state'])
+                
+                st.subheader("📊 Final Latency Trends")
+                st.line_chart(df[['avg_lat', 'p95_lat', 'p99_lat']])
+                
+                st.subheader("📋 Final Summary")
+                summary = df[['timestamp', 'avg_lat', 'p99_lat', 'switch_count', 'label']].tail(20)
+                st.dataframe(summary)
+        
+        # Exit cleanly
+        st.info("Dashboard stopped. Workload collection is complete.")
+        time.sleep(2)
+        break
 
     if not df.empty:
         # Apply logic
@@ -77,6 +114,15 @@ while True:
         history = st.session_state.history
 
         with chart_placeholder.container():
+            
+            # ==============================
+            # 🎯 WORKLOAD STATUS INDICATOR
+            # ==============================
+            if workload_running:
+                st.success("🟢 **WORKLOAD RUNNING** - Collecting events...")
+            else:
+                st.warning("🟡 **WORKLOAD STOPPING** - Processing final data...")
+                st.session_state.workload_stopped = True
 
             # ==============================
             # 🔥 TOP METRICS

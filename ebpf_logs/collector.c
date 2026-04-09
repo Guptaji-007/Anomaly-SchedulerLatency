@@ -30,6 +30,12 @@ struct event {
     char comm[16];
 };
 
+struct config {
+    unsigned long long min_latency_ns;
+    unsigned int sample_rate;
+    unsigned int include_kernel_threads;
+};
+
 double latencies[MAX_EVENTS];
 int priorities[MAX_EVENTS];
 int latency_count = 0;
@@ -78,16 +84,48 @@ double percentile(double *arr, int n, double p) {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2 || argc > 3) {
-        printf("Usage: %s <label: 0 for normal, 1 for anomaly> [target_tgid]\n", argv[0]);
-        printf("  target_tgid optional: 0 (or omitted) monitors all processes\n");
+    if (argc < 2 || argc > 5) {
+        printf("Usage: %s <label: 0|1> [target_tgid] [min_latency_us] [sample_rate]\n", argv[0]);
+        printf("  target_tgid: optional, 0 (or omitted) monitors all processes\n");
+        printf("  min_latency_us: optional minimum latency to emit (default depends on mode)\n");
+        printf("  sample_rate: optional emit 1 out of N matched events (default depends on mode)\n");
         return 1;
     }
     int label = atoi(argv[1]);
     active_label = label;
     __u32 filter_tgid = 0;
+    unsigned int min_latency_us = 0;
+    unsigned int sample_rate = 1;
+
     if (argc == 3) {
         filter_tgid = (__u32)atoi(argv[2]);
+    } else if (argc >= 4) {
+        filter_tgid = (__u32)atoi(argv[2]);
+        min_latency_us = (unsigned int)atoi(argv[3]);
+        if (argc >= 5) {
+            sample_rate = (unsigned int)atoi(argv[4]);
+        }
+    }
+
+    // Safe defaults to prevent overload in all-process mode.
+    if (filter_tgid == 0) {
+        if (argc < 4) {
+            min_latency_us = 50;
+        }
+        if (argc < 5 || sample_rate == 0) {
+            sample_rate = 10;
+        }
+    } else {
+        if (argc < 4) {
+            min_latency_us = 0;
+        }
+        if (argc < 5 || sample_rate == 0) {
+            sample_rate = 1;
+        }
+    }
+
+    if (sample_rate == 0) {
+        sample_rate = 1;
     }
 
     signal(SIGINT, sig_handler);
@@ -109,6 +147,18 @@ int main(int argc, char **argv) {
     int tgid_map_fd = bpf_object__find_map_fd_by_name(obj, "target_tgid_map");
     if (tgid_map_fd < 0 || bpf_map_update_elem(tgid_map_fd, &key, &value, BPF_ANY) != 0) {
         perror("Failed to configure target_tgid_map");
+        bpf_object__close(obj);
+        return 1;
+    }
+
+    struct config cfg = {
+        .min_latency_ns = (unsigned long long)min_latency_us * 1000ULL,
+        .sample_rate = sample_rate,
+        .include_kernel_threads = (filter_tgid != 0) ? 1u : 0u,
+    };
+    int cfg_map_fd = bpf_object__find_map_fd_by_name(obj, "config_map");
+    if (cfg_map_fd < 0 || bpf_map_update_elem(cfg_map_fd, &key, &cfg, BPF_ANY) != 0) {
+        perror("Failed to configure config_map");
         bpf_object__close(obj);
         return 1;
     }
@@ -153,6 +203,7 @@ int main(int argc, char **argv) {
     } else {
         printf("   Mode: monitor target TGID %u only\n", filter_tgid);
     }
+    printf("   Filters: min_latency_us=%u, sample_rate=1/%u\n", min_latency_us, sample_rate);
     printf("   Per-event log: ebpf_events.csv\n");
     printf("   Window stats: dataset.csv\n");
     printf("   Press Ctrl+C to stop\n");

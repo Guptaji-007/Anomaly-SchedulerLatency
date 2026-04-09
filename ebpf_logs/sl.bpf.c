@@ -3,6 +3,8 @@
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_core_read.h>
 
+#define PF_KTHREAD 0x00200000
+
 char LICENSE[] SEC("license") = "GPL";
 
 /* =================================================
@@ -27,6 +29,26 @@ struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } events SEC(".maps");
+
+struct config {
+    u64 min_latency_ns;
+    u32 sample_rate;
+    u32 include_kernel_threads;
+};
+
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, u32);
+    __type(value, struct config);
+} config_map SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, u32);
+    __type(value, u64);
+} sample_counter SEC(".maps");
 
 /* =================================================
  * ENRICHED EVENT STRUCTURE
@@ -92,6 +114,7 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     u32 key = 0;
     u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
     u32 filter_tgid = target_tgid ? *target_tgid : 0;
+    struct config *cfg = bpf_map_lookup_elem(&config_map, &key);
     
     // -----------------------------------------------------------
     // 🔹 THE FIX: RECORD THE TASK BEING PREEMPTED (if target)
@@ -115,6 +138,17 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     u32 next_pid = next->pid;
     u32 next_tgid = next->tgid;
 
+    if (next_pid == 0 || next_tgid == 0) {
+        return 0;
+    }
+
+    if (cfg && cfg->include_kernel_threads == 0) {
+        unsigned long flags = BPF_CORE_READ(next, flags);
+        if (flags & PF_KTHREAD) {
+            return 0;
+        }
+    }
+
     if (filter_tgid != 0 && filter_tgid != next_tgid) {
         return 0;
     }
@@ -126,6 +160,20 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
 
     u64 latency = ts - *tsp;
     bpf_map_delete_elem(&start, &next_pid);
+
+    if (cfg && latency < cfg->min_latency_ns) {
+        return 0;
+    }
+
+    if (cfg && cfg->sample_rate > 1) {
+        u64 *counter = bpf_map_lookup_elem(&sample_counter, &key);
+        if (counter) {
+            (*counter)++;
+            if ((*counter % cfg->sample_rate) != 0) {
+                return 0;
+            }
+        }
+    }
 
     /* Send Data to User Space via Ring Buffer */
     struct event *e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);

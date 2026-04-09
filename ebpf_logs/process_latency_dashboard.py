@@ -1,6 +1,8 @@
 import os
 import subprocess
 import time
+from collections import deque
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -51,11 +53,32 @@ def list_running_processes() -> pd.DataFrame:
     return df.sort_values(by=["name", "pid"]).reset_index(drop=True)
 
 
-def load_ebpf_events(path: str) -> pd.DataFrame:
+def resolve_events_path(path: str) -> str:
+    if os.path.exists(path):
+        return path
+
+    candidates = [
+        "ebpf_events.csv",
+        "ebpf_logs/ebpf_events.csv",
+        os.path.join(os.path.dirname(__file__), "ebpf_events.csv"),
+    ]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    return path
+
+
+def load_ebpf_events(path: str, max_rows: int = 30000) -> pd.DataFrame:
     required = ["timestamp_ns", "pid", "tgid", "comm", "cpu_id", "priority", "latency_us", "label"]
 
     try:
-        df = pd.read_csv(path)
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            header = f.readline().strip()
+            tail_lines = list(deque(f, maxlen=max_rows))
+        if not header:
+            return pd.DataFrame(columns=required + ["timestamp_s"])
+        csv_blob = header + "\n" + "".join(tail_lines)
+        df = pd.read_csv(StringIO(csv_blob))
     except Exception:
         return pd.DataFrame(columns=required + ["timestamp_s"])
 
@@ -124,6 +147,7 @@ st.caption("Select any running process and inspect scheduler runqueue latency fr
 with st.sidebar:
     st.header("Controls")
     events_path = st.text_input("eBPF events file", value="ebpf_logs/ebpf_events.csv")
+    max_rows = st.slider("Rows loaded per refresh", min_value=2000, max_value=100000, step=2000, value=30000)
     refresh_interval = st.slider("Auto-refresh interval (seconds)", min_value=2, max_value=20, value=5)
     auto_refresh = st.checkbox("Enable auto-refresh", value=True)
     manual_refresh = st.button("Refresh now")
@@ -136,12 +160,13 @@ running_df = list_running_processes()
 if running_df.empty:
     st.warning("No running processes could be listed. Check permissions or install psutil.")
 
+events_path = resolve_events_path(events_path)
 if not os.path.exists(events_path):
     st.error(f"eBPF events file not found: {events_path}")
     st.info("Start collector first, for example: sudo ./ebpf_logs/collector 0")
     st.stop()
 
-events_df = load_ebpf_events(events_path)
+events_df = load_ebpf_events(events_path, max_rows=max_rows)
 summary_df = summarize_latency(events_df)
 
 running_pid_set = set(running_df["pid"].tolist()) if not running_df.empty else set()
@@ -170,14 +195,35 @@ selection_df = running_df.copy()
 if selection_df.empty:
     selection_df = pd.DataFrame(columns=["pid", "name", "status"])
 
-selection_options = {f"{row.name} (PID {row.pid})": int(row.pid) for row in selection_df.itertuples()}
+event_proc_df = summary_df.copy()
+event_proc_df["is_running"] = event_proc_df["tgid"].isin(running_pid_set)
+
+event_options = {
+    f"{row.comm} (PID {row.tgid}, events {row.events}, running={row.is_running})": int(row.tgid)
+    for row in event_proc_df.itertuples()
+}
+running_options = {f"{row.name} (PID {row.pid})": int(row.pid) for row in selection_df.itertuples()}
 
 st.subheader("Process Selection")
 
 selected_pid = None
-if selection_options:
-    chosen_label = st.selectbox("Choose a running process", options=list(selection_options.keys()))
-    selected_pid = selection_options[chosen_label]
+selection_mode = st.radio(
+    "Select from",
+    options=["Processes with eBPF data", "All running processes"],
+    index=0,
+    horizontal=True,
+)
+
+if selection_mode == "Processes with eBPF data":
+    if event_options:
+        chosen_label = st.selectbox("Choose a process with collected latency data", options=list(event_options.keys()))
+        selected_pid = event_options[chosen_label]
+    else:
+        st.info("No process has eBPF data yet. Keep collector running for a few seconds.")
+else:
+    if running_options:
+        chosen_label = st.selectbox("Choose a running process", options=list(running_options.keys()))
+        selected_pid = running_options[chosen_label]
 
 manual_pid = st.number_input("Or enter PID manually", min_value=0, step=1, value=0)
 if manual_pid > 0:
@@ -190,6 +236,7 @@ else:
 
     if proc_df.empty:
         st.warning(f"No eBPF latency samples found for PID {selected_pid} in the current events file.")
+        st.info("Tip: run targeted collection for this process, e.g. sudo ./ebpf_logs/collector 0 <PID>")
     else:
         proc_df = proc_df.sort_values(by="timestamp_s")
         lat = proc_df["latency_us"].to_numpy(dtype=float)

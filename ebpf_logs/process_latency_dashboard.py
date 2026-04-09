@@ -1,5 +1,4 @@
 import os
-import re
 import subprocess
 import time
 
@@ -52,92 +51,49 @@ def list_running_processes() -> pd.DataFrame:
     return df.sort_values(by=["name", "pid"]).reset_index(drop=True)
 
 
-WAKEUP_RE = re.compile(
-    r"\s+(\d+\.\d+):\s+sched:sched_wakeup(?:_new)?:\s+(.+):(\d+)\s+\["
-)
-SWITCH_RE = re.compile(
-    r"\s+(\d+\.\d+):\s+sched:sched_switch:\s+(.+):(\d+)\s+\[.*?\]\s+([A-Z\+]+)\s+==>\s+(.+):(\d+)\s+\["
-)
+def load_ebpf_events(path: str) -> pd.DataFrame:
+    required = ["timestamp_ns", "pid", "tgid", "comm", "cpu_id", "priority", "latency_us", "label"]
 
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return pd.DataFrame(columns=required + ["timestamp_s"])
 
-def parse_perf_trace(path: str) -> pd.DataFrame:
-    wait_start_ns = {}
-    wait_reason = {}
-    comm_by_pid = {}
-    records = []
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        return pd.DataFrame(columns=required + ["timestamp_s"])
 
-    with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        for raw_line in f:
-            wake = WAKEUP_RE.search(raw_line)
-            if wake:
-                ts_s = float(wake.group(1))
-                comm = wake.group(2).strip()
-                pid = int(wake.group(3))
-                ts_ns = ts_s * 1e9
+    df = df.copy()
+    for col in ["timestamp_ns", "pid", "tgid", "cpu_id", "priority", "latency_us", "label"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
-                wait_start_ns[pid] = ts_ns
-                wait_reason[pid] = "wakeup"
-                comm_by_pid[pid] = comm
-                continue
+    df = df.dropna(subset=["timestamp_ns", "pid", "tgid", "latency_us"])
+    if df.empty:
+        return pd.DataFrame(columns=required + ["timestamp_s"])
 
-            sw = SWITCH_RE.search(raw_line)
-            if not sw:
-                continue
-
-            ts_s = float(sw.group(1))
-            prev_comm = sw.group(2).strip()
-            prev_pid = int(sw.group(3))
-            prev_state = sw.group(4)
-            next_comm = sw.group(5).strip()
-            next_pid = int(sw.group(6))
-            ts_ns = ts_s * 1e9
-
-            comm_by_pid[prev_pid] = prev_comm
-            comm_by_pid[next_pid] = next_comm
-
-            if "R" in prev_state:
-                wait_start_ns[prev_pid] = ts_ns
-                wait_reason[prev_pid] = "preempted"
-
-            start_ns = wait_start_ns.pop(next_pid, None)
-            if start_ns is None:
-                continue
-
-            reason = wait_reason.pop(next_pid, "unknown")
-            latency_us = (ts_ns - start_ns) / 1000.0
-
-            if latency_us < 0:
-                continue
-
-            records.append(
-                {
-                    "timestamp_s": ts_s,
-                    "pid": next_pid,
-                    "comm": comm_by_pid.get(next_pid, next_comm),
-                    "latency_us": latency_us,
-                    "reason": reason,
-                }
-            )
-
-    if not records:
-        return pd.DataFrame(columns=["timestamp_s", "pid", "comm", "latency_us", "reason"])
-
-    df = pd.DataFrame(records)
-    return df.sort_values(by="timestamp_s").reset_index(drop=True)
+    df["timestamp_ns"] = df["timestamp_ns"].astype("int64")
+    df["pid"] = df["pid"].astype("int32")
+    df["tgid"] = df["tgid"].astype("int32")
+    df["cpu_id"] = df["cpu_id"].fillna(-1).astype("int32")
+    df["priority"] = df["priority"].fillna(-1).astype("int32")
+    df["label"] = df["label"].fillna(0).astype("int32")
+    df["comm"] = df["comm"].astype(str)
+    df["timestamp_s"] = df["timestamp_ns"] / 1e9
+    return df.sort_values(by="timestamp_ns").reset_index(drop=True)
 
 
 def summarize_latency(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     if df.empty:
         return pd.DataFrame(
-            columns=["pid", "comm", "events", "avg_us", "p50_us", "p95_us", "p99_us", "max_us"]
+            columns=["tgid", "comm", "events", "avg_us", "p50_us", "p95_us", "p99_us", "max_us"]
         )
 
-    for (pid, comm), grp in df.groupby(["pid", "comm"], dropna=False):
+    for (tgid, comm), grp in df.groupby(["tgid", "comm"], dropna=False):
         lat = grp["latency_us"].to_numpy(dtype=float)
         rows.append(
             {
-                "pid": int(pid),
+                "tgid": int(tgid),
                 "comm": str(comm),
                 "events": int(len(lat)),
                 "avg_us": float(np.mean(lat)),
@@ -163,11 +119,11 @@ def build_histogram(latencies_us: np.ndarray, bins: int = 20) -> pd.DataFrame:
 
 st.set_page_config(page_title="Process Scheduling Latency Dashboard", layout="wide")
 st.title("Process Scheduling Latency Dashboard")
-st.caption("Select any running process and inspect its scheduler runqueue latency from perf trace events.")
+st.caption("Select any running process and inspect scheduler runqueue latency from live eBPF events.")
 
 with st.sidebar:
     st.header("Controls")
-    trace_path = st.text_input("Perf trace file", value="perf_script.txt")
+    events_path = st.text_input("eBPF events file", value="ebpf_logs/ebpf_events.csv")
     refresh_interval = st.slider("Auto-refresh interval (seconds)", min_value=2, max_value=20, value=5)
     auto_refresh = st.checkbox("Enable auto-refresh", value=True)
     manual_refresh = st.button("Refresh now")
@@ -180,32 +136,33 @@ running_df = list_running_processes()
 if running_df.empty:
     st.warning("No running processes could be listed. Check permissions or install psutil.")
 
-if not os.path.exists(trace_path):
-    st.error(f"Trace file not found: {trace_path}")
+if not os.path.exists(events_path):
+    st.error(f"eBPF events file not found: {events_path}")
+    st.info("Start collector first, for example: sudo ./ebpf_logs/collector 0")
     st.stop()
 
-trace_df = parse_perf_trace(trace_path)
-summary_df = summarize_latency(trace_df)
+events_df = load_ebpf_events(events_path)
+summary_df = summarize_latency(events_df)
 
 running_pid_set = set(running_df["pid"].tolist()) if not running_df.empty else set()
 
 if summary_df.empty:
-    st.info("No sched_wakeup/sched_switch latency pairs parsed from the current trace file.")
+    st.info("No eBPF latency events available yet in the current events file.")
 else:
     combined_df = summary_df.copy()
-    combined_df["is_running"] = combined_df["pid"].isin(running_pid_set)
+    combined_df["is_running"] = combined_df["tgid"].isin(running_pid_set)
     combined_df = combined_df.merge(
-        running_df[["pid", "status"]], on="pid", how="left"
+        running_df[["pid", "status"]], left_on="tgid", right_on="pid", how="left"
     )
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Trace Events", int(len(trace_df)))
-    col2.metric("Unique PIDs in Trace", int(summary_df["pid"].nunique()))
-    col3.metric("Running PIDs with Trace Data", int(combined_df["is_running"].sum()))
+    col1.metric("eBPF Events", int(len(events_df)))
+    col2.metric("Processes in eBPF Stream", int(summary_df["tgid"].nunique()))
+    col3.metric("Running Processes with eBPF Data", int(combined_df["is_running"].sum()))
 
     st.subheader("Top Processes by P99 Latency")
     st.dataframe(
-        combined_df[["pid", "comm", "events", "avg_us", "p95_us", "p99_us", "max_us", "is_running", "status"]].head(50),
+        combined_df[["tgid", "comm", "events", "avg_us", "p95_us", "p99_us", "max_us", "is_running", "status"]].head(50),
         use_container_width=True,
     )
 
@@ -229,10 +186,10 @@ if manual_pid > 0:
 if selected_pid is None:
     st.info("Select a process to view latency analytics.")
 else:
-    proc_df = trace_df[trace_df["pid"] == selected_pid].copy()
+    proc_df = events_df[events_df["tgid"] == selected_pid].copy()
 
     if proc_df.empty:
-        st.warning(f"No latency samples found for PID {selected_pid} in the current trace file.")
+        st.warning(f"No eBPF latency samples found for PID {selected_pid} in the current events file.")
     else:
         proc_df = proc_df.sort_values(by="timestamp_s")
         lat = proc_df["latency_us"].to_numpy(dtype=float)
@@ -252,12 +209,16 @@ else:
         hist_df = build_histogram(lat, bins=24).set_index("bucket_us")
         st.bar_chart(hist_df)
 
-        st.subheader("Wakeup vs Preemption Contribution")
-        reason_counts = proc_df["reason"].value_counts().rename_axis("reason").to_frame("count")
-        st.bar_chart(reason_counts)
+        st.subheader("Per-CPU Event Contribution")
+        cpu_counts = proc_df["cpu_id"].value_counts().sort_index().rename_axis("cpu").to_frame("count")
+        st.bar_chart(cpu_counts)
+
+        st.subheader("Priority Distribution")
+        prio_counts = proc_df["priority"].value_counts().sort_index().rename_axis("priority").to_frame("count")
+        st.bar_chart(prio_counts)
 
         st.subheader("Recent Events")
-        st.dataframe(proc_df.tail(200), use_container_width=True)
+        st.dataframe(proc_df[["timestamp_ns", "timestamp_s", "tgid", "pid", "comm", "cpu_id", "priority", "latency_us", "label"]].tail(200), use_container_width=True)
 
 if auto_refresh:
     time.sleep(refresh_interval)

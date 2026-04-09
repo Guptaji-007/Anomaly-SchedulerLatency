@@ -33,9 +33,12 @@ struct {
  * ================================================= */
 struct event {
     u32 pid;
+    u32 tgid;
     u64 latency_ns;
+    u64 ts_ns;
     u32 cpu_id;
     int priority;
+    char comm[16];
 };
 
 /* =================================================
@@ -47,14 +50,14 @@ SEC("tp_btf/sched_wakeup")
 int BPF_PROG(sched_wakeup, struct task_struct *p)
 {
     u32 tgid = p->tgid;
-    
-    // Filter by target workload only
+
+    // Optional TGID filter: 0 means monitor all tasks
     u32 key = 0;
     u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
-    if (!target_tgid || *target_tgid != tgid) {
-        return 0; // Ignore non-target processes
+    if (target_tgid && *target_tgid != 0 && *target_tgid != tgid) {
+        return 0;
     }
-    
+
     u32 pid = p->pid;
     u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
@@ -65,14 +68,14 @@ SEC("tp_btf/sched_wakeup_new")
 int BPF_PROG(sched_wakeup_new, struct task_struct *p)
 {
     u32 tgid = p->tgid;
-    
-    // Filter by target workload only
+
+    // Optional TGID filter: 0 means monitor all tasks
     u32 key = 0;
     u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
-    if (!target_tgid || *target_tgid != tgid) {
-        return 0; // Ignore non-target processes
+    if (target_tgid && *target_tgid != 0 && *target_tgid != tgid) {
+        return 0;
     }
-    
+
     u32 pid = p->pid;
     u64 ts = bpf_ktime_get_ns();
     bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
@@ -84,13 +87,11 @@ SEC("tp_btf/sched_switch")
 int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_struct *next)
 {
     u64 ts = bpf_ktime_get_ns();
-    
-    // Get target TGID for filtering
+
+    // Optional TGID filter: 0 means monitor all tasks
     u32 key = 0;
     u32 *target_tgid = bpf_map_lookup_elem(&target_tgid_map, &key);
-    if (!target_tgid) {
-        return 0;
-    }
+    u32 filter_tgid = target_tgid ? *target_tgid : 0;
     
     // -----------------------------------------------------------
     // 🔹 THE FIX: RECORD THE TASK BEING PREEMPTED (if target)
@@ -98,12 +99,11 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     // it was preempted. Record the time it entered the runqueue.
     // -----------------------------------------------------------
     long state = BPF_CORE_READ(prev, __state);
-    
+
     // state 0 means TASK_RUNNING (the task was preempted, not sleeping)
     if (state == 0) { 
         u32 prev_tgid = prev->tgid;
-        // Only record preemption of target workload
-        if (*target_tgid == prev_tgid) {
+        if (filter_tgid == 0 || filter_tgid == prev_tgid) {
             u32 prev_pid = prev->pid;
             bpf_map_update_elem(&start, &prev_pid, &ts, BPF_ANY);
         }
@@ -115,9 +115,8 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     u32 next_pid = next->pid;
     u32 next_tgid = next->tgid;
 
-    // Filter by our target workload TGID
-    if (*target_tgid != next_tgid) {
-        return 0; // Ignore background system tasks
+    if (filter_tgid != 0 && filter_tgid != next_tgid) {
+        return 0;
     }
 
     u64 *tsp = bpf_map_lookup_elem(&start, &next_pid);
@@ -133,9 +132,12 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     if (!e) return 0;
 
     e->pid = next_pid;
+    e->tgid = next_tgid;
     e->latency_ns = latency;
+    e->ts_ns = ts;
     e->cpu_id = bpf_get_smp_processor_id(); 
     e->priority = next->prio; 
+    bpf_core_read_str(e->comm, sizeof(e->comm), next->comm);
 
     bpf_ringbuf_submit(e, 0);
     return 0;

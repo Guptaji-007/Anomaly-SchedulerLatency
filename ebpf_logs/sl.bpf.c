@@ -117,16 +117,11 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     struct config *cfg = bpf_map_lookup_elem(&config_map, &key);
     
     // -----------------------------------------------------------
-    // 🔹 THE FIX: RECORD THE TASK BEING PREEMPTED (if target)
+    // THE FIX: RECORD THE TASK BEING PREEMPTED (if target)
     // If the task leaving the CPU is still in TASK_RUNNING (0), 
     // it was preempted. Record the time it entered the runqueue.
     // -----------------------------------------------------------
-    long state = 0;
-    if (bpf_core_field_exists(prev->__state)) {
-        state = BPF_CORE_READ(prev, __state);
-    } else {
-        state = BPF_CORE_READ(prev, state);
-    }
+    long state = BPF_CORE_READ(prev, __state);
 
     // state 0 means TASK_RUNNING (the task was preempted, not sleeping)
     if (state == 0) { 
@@ -138,7 +133,7 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     }
 
     // -----------------------------------------------------------
-    // 🔹 CALCULATE LATENCY FOR TASK GETTING THE CPU
+    // CALCULATE LATENCY FOR TASK GETTING THE CPU
     // -----------------------------------------------------------
     u32 next_pid = next->pid;
     u32 next_tgid = next->tgid;

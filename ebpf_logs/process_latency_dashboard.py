@@ -59,6 +59,12 @@ def start_targeted_collector(label: int, target_pid: int, min_latency_us: int, s
     if ret is not None and ret != 0:
         tail = read_log_tail(COLLECTOR_LOG)
         msg = "Collector failed to start."
+        if "Operation not permitted" in tail or "RLIMIT_MEMLOCK" in tail:
+            msg += (
+                "\n\nPermission issue while loading eBPF. "
+                "Run Streamlit with sudo, or grant capabilities to collector:\n"
+                "sudo setcap cap_bpf,cap_perfmon,cap_sys_resource+ep ./ebpf_logs/collector"
+            )
         if tail:
             msg += f"\n\nRecent log:\n{tail}"
         return False, msg
@@ -233,12 +239,19 @@ if running_df.empty:
     st.warning("No running processes could be listed. Check permissions or install psutil.")
 
 events_path = resolve_events_path(events_path)
-if not os.path.exists(events_path):
-    st.error(f"eBPF events file not found: {events_path}")
-    st.info("Start collector first, for example: sudo ./ebpf_logs/collector 0")
-    st.stop()
+events_available = os.path.exists(events_path)
+if not events_available:
+    st.info(
+        "No events file yet. Select a process below and start targeted collector. "
+        "Analytics will appear as soon as events are written."
+    )
 
-events_df = load_ebpf_events(events_path, max_rows=max_rows)
+if events_available:
+    events_df = load_ebpf_events(events_path, max_rows=max_rows)
+else:
+    events_df = pd.DataFrame(
+        columns=["timestamp_ns", "pid", "tgid", "comm", "cpu_id", "priority", "latency_us", "label", "timestamp_s"]
+    )
 summary_df = summarize_latency(events_df)
 
 running_pid_set = set(running_df["pid"].tolist()) if not running_df.empty else set()
@@ -281,21 +294,23 @@ st.subheader("Process Selection")
 selected_pid = None
 selection_mode = st.radio(
     "Select from",
-    options=["Processes with eBPF data", "All running processes"],
+    options=["All running processes", "Processes with eBPF data"],
     index=0,
     horizontal=True,
 )
 
-if selection_mode == "Processes with eBPF data":
+if selection_mode == "All running processes":
+    if running_options:
+        chosen_label = st.selectbox("Choose a running process", options=list(running_options.keys()))
+        selected_pid = running_options[chosen_label]
+    else:
+        st.info("No running process list available. Enter PID manually.")
+else:
     if event_options:
         chosen_label = st.selectbox("Choose a process with collected latency data", options=list(event_options.keys()))
         selected_pid = event_options[chosen_label]
     else:
-        st.info("No process has eBPF data yet. Keep collector running for a few seconds.")
-else:
-    if running_options:
-        chosen_label = st.selectbox("Choose a running process", options=list(running_options.keys()))
-        selected_pid = running_options[chosen_label]
+        st.info("No process has eBPF data yet. Start targeted collector first.")
 
 manual_pid = st.number_input("Or enter PID manually", min_value=0, step=1, value=0)
 if manual_pid > 0:
@@ -327,6 +342,7 @@ if selected_pid is not None:
             ok, msg = start_targeted_collector(label, selected_pid, min_latency_us, sample_rate)
             if ok:
                 st.success(msg)
+                st.rerun()
             else:
                 st.error(msg)
 
@@ -355,7 +371,8 @@ else:
     proc_df = events_df[events_df["tgid"] == selected_pid].copy()
 
     if proc_df.empty:
-        st.warning(f"No eBPF latency samples found for PID {selected_pid} in the current events file.")
+        if events_available:
+            st.warning(f"No eBPF latency samples found for PID {selected_pid} in the current events file.")
         st.info(f"Tip: run targeted collection for this process, e.g. sudo ./ebpf_logs/collector 0 {selected_pid}")
     else:
         proc_df = proc_df.sort_values(by="timestamp_s")

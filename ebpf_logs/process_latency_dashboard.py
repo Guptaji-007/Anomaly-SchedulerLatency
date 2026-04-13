@@ -218,6 +218,8 @@ if "collector_pid" not in st.session_state:
     st.session_state.collector_pid = 0
 if "collector_cmd" not in st.session_state:
     st.session_state.collector_cmd = ""
+if "selected_pid" not in st.session_state:
+    st.session_state.selected_pid = None
 
 if st.session_state.collector_pid and not is_pid_alive(int(st.session_state.collector_pid)):
     st.session_state.collector_pid = 0
@@ -297,24 +299,49 @@ selection_mode = st.radio(
     options=["All running processes", "Processes with eBPF data"],
     index=0,
     horizontal=True,
+    key="selection_mode",
 )
 
 if selection_mode == "All running processes":
     if running_options:
-        chosen_label = st.selectbox("Choose a running process", options=list(running_options.keys()))
-        selected_pid = running_options[chosen_label]
+        running_pids = sorted(list(running_options.values()))
+        running_label_by_pid = {pid: label for label, pid in running_options.items()}
+        default_pid = st.session_state.selected_pid if st.session_state.selected_pid in running_pids else running_pids[0]
+        default_index = running_pids.index(default_pid)
+        selected_pid = st.selectbox(
+            "Choose a running process",
+            options=running_pids,
+            index=default_index,
+            format_func=lambda pid: running_label_by_pid.get(pid, f"PID {pid}"),
+            key="running_process_select",
+        )
     else:
         st.info("No running process list available. Enter PID manually.")
 else:
     if event_options:
-        chosen_label = st.selectbox("Choose a process with collected latency data", options=list(event_options.keys()))
-        selected_pid = event_options[chosen_label]
+        event_pids = sorted(list(event_options.values()))
+        event_label_by_pid = {pid: label for label, pid in event_options.items()}
+        default_pid = st.session_state.selected_pid if st.session_state.selected_pid in event_pids else event_pids[0]
+        default_index = event_pids.index(default_pid)
+        selected_pid = st.selectbox(
+            "Choose a process with collected latency data",
+            options=event_pids,
+            index=default_index,
+            format_func=lambda pid: event_label_by_pid.get(pid, f"PID {pid}"),
+            key="event_process_select",
+        )
     else:
         st.info("No process has eBPF data yet. Start targeted collector first.")
 
 manual_pid = st.number_input("Or enter PID manually", min_value=0, step=1, value=0)
 if manual_pid > 0:
     selected_pid = int(manual_pid)
+
+if selected_pid is None and st.session_state.selected_pid is not None:
+    selected_pid = int(st.session_state.selected_pid)
+
+if selected_pid is not None:
+    st.session_state.selected_pid = int(selected_pid)
 
 st.subheader("Collector Control")
 

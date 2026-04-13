@@ -121,7 +121,12 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     // If the task leaving the CPU is still in TASK_RUNNING (0), 
     // it was preempted. Record the time it entered the runqueue.
     // -----------------------------------------------------------
-    long state = BPF_CORE_READ(prev, __state);
+    long state = 0;
+    if (bpf_core_field_exists(prev->__state)) {
+        state = BPF_CORE_READ(prev, __state);
+    } else {
+        state = BPF_CORE_READ(prev, state);
+    }
 
     // state 0 means TASK_RUNNING (the task was preempted, not sleeping)
     if (state == 0) { 

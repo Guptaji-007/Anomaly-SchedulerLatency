@@ -5,6 +5,7 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/resource.h>
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
@@ -14,6 +15,58 @@
 static volatile int exiting = 0;
 static FILE *events_fp = NULL;
 static int active_label = 0;
+
+static int get_exe_dir(char *buf, size_t size) {
+    ssize_t n = readlink("/proc/self/exe", buf, size - 1);
+    if (n <= 0 || (size_t)n >= size) {
+        return -1;
+    }
+
+    buf[n] = '\0';
+    char *slash = strrchr(buf, '/');
+    if (!slash) {
+        return -1;
+    }
+    *slash = '\0';
+    return 0;
+}
+
+static void build_path(char *out, size_t size, const char *dir, const char *file) {
+    if (!dir || dir[0] == '\0') {
+        snprintf(out, size, "%s", file);
+        return;
+    }
+    snprintf(out, size, "%s/%s", dir, file);
+}
+
+static int resolve_bpf_obj_path(char *out, size_t size, const char *exe_dir) {
+    const char *env_obj = getenv("SL_BPF_OBJ");
+    if (env_obj && env_obj[0] != '\0' && access(env_obj, R_OK) == 0) {
+        snprintf(out, size, "%s", env_obj);
+        return 0;
+    }
+
+    if (access("sl.bpf.o", R_OK) == 0) {
+        snprintf(out, size, "sl.bpf.o");
+        return 0;
+    }
+
+    if (access("ebpf_logs/sl.bpf.o", R_OK) == 0) {
+        snprintf(out, size, "ebpf_logs/sl.bpf.o");
+        return 0;
+    }
+
+    if (exe_dir && exe_dir[0] != '\0') {
+        char candidate[PATH_MAX];
+        build_path(candidate, sizeof(candidate), exe_dir, "sl.bpf.o");
+        if (access(candidate, R_OK) == 0) {
+            snprintf(out, size, "%s", candidate);
+            return 0;
+        }
+    }
+
+    return -1;
+}
 
 void sig_handler(int sig) { 
     exiting = 1;
@@ -128,13 +181,29 @@ int main(int argc, char **argv) {
         sample_rate = 1;
     }
 
+    char exe_dir[PATH_MAX] = {0};
+    if (get_exe_dir(exe_dir, sizeof(exe_dir)) != 0) {
+        snprintf(exe_dir, sizeof(exe_dir), ".");
+    }
+
+    char bpf_obj_path[PATH_MAX] = {0};
+    if (resolve_bpf_obj_path(bpf_obj_path, sizeof(bpf_obj_path), exe_dir) != 0) {
+        fprintf(stderr, "Failed to locate sl.bpf.o. Build it first or set SL_BPF_OBJ.\n");
+        return 1;
+    }
+
+    char events_path[PATH_MAX] = {0};
+    char dataset_path[PATH_MAX] = {0};
+    build_path(events_path, sizeof(events_path), exe_dir, "ebpf_events.csv");
+    build_path(dataset_path, sizeof(dataset_path), exe_dir, "dataset.csv");
+
     signal(SIGINT, sig_handler);
     struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
     setrlimit(RLIMIT_MEMLOCK, &r);
 
-    struct bpf_object *obj = bpf_object__open_file("sl.bpf.o", NULL);
+    struct bpf_object *obj = bpf_object__open_file(bpf_obj_path, NULL);
     if (!obj || bpf_object__load(obj)) {
-        printf("Failed to load BPF object\n");
+        fprintf(stderr, "Failed to load BPF object from %s\n", bpf_obj_path);
         return 1;
     }
 
@@ -171,7 +240,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    events_fp = fopen("ebpf_events.csv", "a");
+    events_fp = fopen(events_path, "a");
     if (!events_fp) {
         perror("Failed to open ebpf_events.csv");
         ring_buffer__free(rb);
@@ -184,7 +253,7 @@ int main(int argc, char **argv) {
     }
 
     // Open dataset in APPEND mode so we can combine Normal and Anomaly data
-    FILE *fp = fopen("dataset.csv", "a");
+    FILE *fp = fopen(dataset_path, "a");
     if (!fp) {
         perror("Failed to open dataset.csv");
         fclose(events_fp);
@@ -204,8 +273,9 @@ int main(int argc, char **argv) {
         printf("   Mode: monitor target TGID %u only\n", filter_tgid);
     }
     printf("   Filters: min_latency_us=%u, sample_rate=1/%u\n", min_latency_us, sample_rate);
-    printf("   Per-event log: ebpf_events.csv\n");
-    printf("   Window stats: dataset.csv\n");
+    printf("   BPF object: %s\n", bpf_obj_path);
+    printf("   Per-event log: %s\n", events_path);
+    printf("   Window stats: %s\n", dataset_path);
     printf("   Press Ctrl+C to stop\n");
     time_t window_start = time(NULL);
 

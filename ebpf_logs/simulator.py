@@ -4,10 +4,10 @@ import time
 import os
 
 st.set_page_config(page_title="eBPF Scheduler Anomaly Detector", layout="wide")
-st.title("🚀 Scheduler Latency Analysis Dashboard")
+st.title("Scheduler Latency Analysis Dashboard")
 
-# ==============================
-# 📌 LOAD DATA
+# ===========================
+#  LOAD DATA
 # ==============================
 def load_data():
     try:
@@ -20,14 +20,14 @@ def load_data():
         return pd.DataFrame()
 
 # ==============================
-# 📌 CHECK WORKLOAD STATUS
+# CHECK WORKLOAD STATUS
 # ==============================
 def is_workload_running():
     """Check if the workload.running flag file exists"""
     return os.path.exists("workload.running")
 
 # ==============================
-# 📌 ROOT CAUSE DETECTION (System View)
+# ROOT CAUSE DETECTION (System View)
 # ==============================
 def detect_cause(row):
     if row['p99_lat'] > 100 and row['switch_count'] > 500:
@@ -44,13 +44,13 @@ def detect_cause(row):
         return "Normal"
 
 # ==============================
-# 📌 GROUND TRUTH MAPPER (Label View)
+# GROUND TRUTH MAPPER (Label View)
 # ==============================
 def map_label(row):
-    return "🔴 Stressor Active" if row['label'] == 1 else "🟢 Baseline"
+    return " Stressor Active" if row['label'] == 1 else "Baseline"
 
 # ==============================
-# 📌 STORE HISTORY
+# STORE HISTORY
 # ==============================
 if "history" not in st.session_state:
     st.session_state.history = pd.DataFrame()
@@ -59,12 +59,12 @@ if "workload_stopped" not in st.session_state:
     st.session_state.workload_stopped = False
 
 # ==============================
-# 📌 UI PLACEHOLDER
+#  UI PLACEHOLDER
 # ==============================
 chart_placeholder = st.empty()
 
 # ==============================
-# 📌 LIVE LOOP
+#  LIVE LOOP
 # ==============================
 while True:
     workload_running = is_workload_running()
@@ -73,7 +73,7 @@ while True:
     if not workload_running and st.session_state.workload_stopped:
         # Workload has already stopped - show final state and exit gracefully
         with chart_placeholder.container():
-            st.error("🛑 **WORKLOAD STOPPED** - Collection Complete")
+            st.error("**WORKLOAD STOPPED** - Collection Complete")
             
             if not df.empty:
                 latest = df.iloc[-1]
@@ -119,13 +119,13 @@ while True:
             # 🎯 WORKLOAD STATUS INDICATOR
             # ==============================
             if workload_running:
-                st.success("🟢 **WORKLOAD RUNNING** - Collecting events...")
+                st.success(" **WORKLOAD RUNNING** - Collecting events...")
             else:
-                st.warning("🟡 **WORKLOAD STOPPING** - Processing final data...")
+                st.warning("**WORKLOAD STOPPING** - Processing final data...")
                 st.session_state.workload_stopped = True
 
             # ==============================
-            # 🔥 TOP METRICS
+            #  TOP METRICS
             # ==============================
             col1, col2, col3, col4 = st.columns(4)
 
@@ -135,31 +135,31 @@ while True:
             col4.metric("Ground Truth (Label)", latest['workload_state'])
 
             # ==============================
-            # 🚨 ALERT SYSTEM (Correlating Label & Metrics)
+            # ALERT SYSTEM (Correlating Label & Metrics)
             # ==============================
             if latest['label'] == 1:
-                st.error(f"🚨 INJECTED ANOMALY (Label 1) | Scheduler is under stress. Symptom: {latest['cause']}")
+                st.error(f" INJECTED ANOMALY (Label 1) | Scheduler is under stress. Symptom: {latest['cause']}")
             elif latest['label'] == 0 and latest['p99_lat'] > 100:
-                st.warning(f"⚠️ UNEXPECTED SPIKE (Label 0) | Baseline is running, but system detected: {latest['cause']}")
+                st.warning(f" UNEXPECTED SPIKE (Label 0) | Baseline is running, but system detected: {latest['cause']}")
             else:
-                st.success("✅ NORMAL (Label 0) | System operating within expected baseline.")
+                st.success(" NORMAL (Label 0) | System operating within expected baseline.")
 
             # ==============================
-            # 📊 LATENCY GRAPH
+            #  LATENCY GRAPH
             # ==============================
             st.subheader("Latency Trends (us)")
             st.line_chart(df[['avg_lat', 'p95_lat', 'p99_lat']].tail(60))
 
             # ==============================
-            # 📊 SWITCH GRAPH
+            # SWITCH GRAPH
             # ==============================
             st.subheader("Context Switch Activity")
             st.bar_chart(df['switch_count'].tail(60))
 
             # ==============================
-            # 📋 SPIKE TABLE
+            #  SPIKE TABLE
             # ==============================
-            st.subheader("⚠️ Detected Spikes (P99 > 50us)")
+            st.subheader(" Detected Spikes (P99 > 50us)")
             spikes = history[history['p99_lat'] > 50]
 
             if not spikes.empty:
@@ -170,9 +170,9 @@ while True:
                 st.write("No spikes detected yet")
 
             # ==============================
-            # 📋 FULL HISTORY TABLE
+            #  FULL HISTORY TABLE
             # ==============================
-            st.subheader("📜 Full History")
+            st.subheader("Full History")
             st.dataframe(
                 history[['timestamp', 'avg_lat', 'p99_lat', 'switch_count', 'avg_prio', 'cause', 'label']].tail(50)
             )

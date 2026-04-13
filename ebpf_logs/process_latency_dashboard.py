@@ -1,4 +1,5 @@
 import os
+import signal
 import subprocess
 import time
 from collections import deque
@@ -12,6 +13,69 @@ try:
     import psutil
 except ImportError:
     psutil = None
+
+
+BASE_DIR = os.path.dirname(__file__)
+COLLECTOR_BIN = os.path.join(BASE_DIR, "collector")
+EVENTS_DEFAULT = os.path.join("ebpf_logs", "ebpf_events.csv")
+DATASET_DEFAULT = os.path.join("ebpf_logs", "dataset.csv")
+COLLECTOR_LOG = os.path.join(BASE_DIR, "collector_streamlit.log")
+
+
+def is_pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def read_log_tail(path: str, max_lines: int = 30) -> str:
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            return "".join(deque(f, maxlen=max_lines)).strip()
+    except OSError:
+        return ""
+
+
+def start_targeted_collector(label: int, target_pid: int, min_latency_us: int, sample_rate: int) -> tuple[bool, str]:
+    if not os.path.exists(COLLECTOR_BIN):
+        return False, f"Collector binary not found at: {COLLECTOR_BIN}"
+
+    cmd = [COLLECTOR_BIN, str(label), str(target_pid), str(min_latency_us), str(sample_rate)]
+    with open(COLLECTOR_LOG, "a", encoding="utf-8") as log_fp:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=BASE_DIR,
+            stdout=log_fp,
+            stderr=log_fp,
+            start_new_session=True,
+        )
+
+    time.sleep(0.4)
+    ret = proc.poll()
+    if ret is not None and ret != 0:
+        tail = read_log_tail(COLLECTOR_LOG)
+        msg = "Collector failed to start."
+        if tail:
+            msg += f"\n\nRecent log:\n{tail}"
+        return False, msg
+
+    st.session_state.collector_pid = proc.pid
+    st.session_state.collector_cmd = " ".join(cmd)
+    return True, f"Started collector with PID {proc.pid}"
+
+
+def stop_collector(pid: int) -> tuple[bool, str]:
+    if not is_pid_alive(pid):
+        return False, "Tracked collector process is not running."
+    try:
+        os.kill(pid, signal.SIGINT)
+        return True, f"Sent SIGINT to collector PID {pid}"
+    except OSError as e:
+        return False, f"Failed to stop collector PID {pid}: {e}"
 
 
 def list_running_processes() -> pd.DataFrame:
@@ -144,9 +208,17 @@ st.set_page_config(page_title="Process Scheduling Latency Dashboard", layout="wi
 st.title("Process Scheduling Latency Dashboard")
 st.caption("Select any running process and inspect scheduler runqueue latency from live eBPF events.")
 
+if "collector_pid" not in st.session_state:
+    st.session_state.collector_pid = 0
+if "collector_cmd" not in st.session_state:
+    st.session_state.collector_cmd = ""
+
+if st.session_state.collector_pid and not is_pid_alive(int(st.session_state.collector_pid)):
+    st.session_state.collector_pid = 0
+
 with st.sidebar:
     st.header("Controls")
-    events_path = st.text_input("eBPF events file", value="ebpf_logs/ebpf_events.csv")
+    events_path = st.text_input("eBPF events file", value=EVENTS_DEFAULT)
     max_rows = st.slider("Rows loaded per refresh", min_value=2000, max_value=100000, step=2000, value=30000)
     refresh_interval = st.slider("Auto-refresh interval (seconds)", min_value=2, max_value=20, value=5)
     auto_refresh = st.checkbox("Enable auto-refresh", value=True)
@@ -229,6 +301,54 @@ manual_pid = st.number_input("Or enter PID manually", min_value=0, step=1, value
 if manual_pid > 0:
     selected_pid = int(manual_pid)
 
+st.subheader("Collector Control")
+
+if selected_pid is not None:
+    cc1, cc2, cc3 = st.columns(3)
+    label = cc1.selectbox("Label", options=[0, 1], index=0)
+    min_latency_us = int(cc2.number_input("Min latency (us)", min_value=0, value=0, step=1))
+    sample_rate = int(cc3.number_input("Sample rate (1/N)", min_value=1, value=1, step=1))
+    collector_cmd = f"sudo ./ebpf_logs/collector {label} {selected_pid} {min_latency_us} {sample_rate}"
+    st.code(collector_cmd, language="bash")
+
+    reset_csv = st.checkbox("Reset CSV files before starting collector", value=False)
+    c1, c2 = st.columns(2)
+
+    if c1.button("Start targeted collector", use_container_width=True):
+        if st.session_state.collector_pid and is_pid_alive(int(st.session_state.collector_pid)):
+            st.warning("A tracked collector is already running. Stop it first.")
+        else:
+            if reset_csv:
+                for p in [os.path.join(BASE_DIR, "ebpf_events.csv"), os.path.join(BASE_DIR, "dataset.csv")]:
+                    try:
+                        os.remove(p)
+                    except FileNotFoundError:
+                        pass
+            ok, msg = start_targeted_collector(label, selected_pid, min_latency_us, sample_rate)
+            if ok:
+                st.success(msg)
+            else:
+                st.error(msg)
+
+    if c2.button("Stop tracked collector", use_container_width=True):
+        tracked_pid = int(st.session_state.collector_pid or 0)
+        ok, msg = stop_collector(tracked_pid)
+        if ok:
+            st.session_state.collector_pid = 0
+            st.success(msg)
+        else:
+            st.warning(msg)
+
+    tracked_pid = int(st.session_state.collector_pid or 0)
+    if tracked_pid > 0 and is_pid_alive(tracked_pid):
+        st.info(f"Tracked collector running (PID {tracked_pid})")
+        if st.session_state.collector_cmd:
+            st.caption(st.session_state.collector_cmd)
+    else:
+        st.caption("No tracked collector process is currently running.")
+else:
+    st.info("Select a process above to build and run a targeted collector command.")
+
 if selected_pid is None:
     st.info("Select a process to view latency analytics.")
 else:
@@ -236,7 +356,7 @@ else:
 
     if proc_df.empty:
         st.warning(f"No eBPF latency samples found for PID {selected_pid} in the current events file.")
-        st.info("Tip: run targeted collection for this process, e.g. sudo ./ebpf_logs/collector 0 <PID>")
+        st.info(f"Tip: run targeted collection for this process, e.g. sudo ./ebpf_logs/collector 0 {selected_pid}")
     else:
         proc_df = proc_df.sort_values(by="timestamp_s")
         lat = proc_df["latency_us"].to_numpy(dtype=float)

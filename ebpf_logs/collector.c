@@ -351,8 +351,8 @@ int main(int argc, char **argv) {
         fflush(events_fp);
     }
 
-    printf("✓ Stopped collecting events\n");
-    printf("✓ Collector shutdown complete\n");
+    printf("Stopped collecting events\n");
+    printf("Collector shutdown complete\n");
 
     if (events_fp) {
         fclose(events_fp);

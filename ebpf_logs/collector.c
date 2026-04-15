@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
         fprintf(fp, "timestamp,switch_count,avg_lat,min_lat,max_lat,p95_lat,p99_lat,stddev_lat,over20,over50,over100,avg_prio,highest_prio,label,target_tgid\n");
     }
 
-    printf("🚀 Collecting eBPF scheduler events (Label: %d)...\n", label);
+    printf(" Collecting eBPF scheduler events (Label: %d)...\n", label);
     if (filter_tgid == 0) {
         printf("   Mode: monitor all processes\n");
     } else {

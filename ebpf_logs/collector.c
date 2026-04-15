@@ -70,7 +70,7 @@ static int resolve_bpf_obj_path(char *out, size_t size, const char *exe_dir) {
 
 void sig_handler(int sig) { 
     exiting = 1;
-    printf("\n⚠️  Received signal - stopping collector...\n");
+    printf("\n Received signal - stopping collector...\n");
 }
 
 struct event {

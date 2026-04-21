@@ -63,7 +63,7 @@ def start_targeted_collector(label: int, target_pid: int, min_latency_us: int, s
             msg += (
                 "\n\nPermission issue while loading eBPF. "
                 "Run Streamlit with sudo, or grant capabilities to collector:\n"
-                "sudo setcap cap_bpf,cap_perfmon,cap_sys_resource+ep ./ebpf_logs/collector"
+                "sudo setcap cap_bpf,cap_perfmon,cap_sys_resource+ep ./collector"
             )
         if tail:
             msg += f"\n\nRecent log:\n{tail}"
@@ -350,7 +350,7 @@ if selected_pid is not None:
     label = cc1.selectbox("Label", options=[0, 1], index=0)
     min_latency_us = int(cc2.number_input("Min latency (us)", min_value=0, value=0, step=1))
     sample_rate = int(cc3.number_input("Sample rate (1/N)", min_value=1, value=1, step=1))
-    collector_cmd = f"sudo ./ebpf_logs/collector {label} {selected_pid} {min_latency_us} {sample_rate}"
+    collector_cmd = f"sudo ./collector {label} {selected_pid} {min_latency_us} {sample_rate}"
     st.code(collector_cmd, language="bash")
 
     reset_csv = st.checkbox("Reset CSV files before starting collector", value=False)
@@ -400,7 +400,7 @@ else:
     if proc_df.empty:
         if events_available:
             st.warning(f"No eBPF latency samples found for PID {selected_pid} in the current events file.")
-        st.info(f"Tip: run targeted collection for this process, e.g. sudo ./ebpf_logs/collector 0 {selected_pid}")
+        st.info(f"Tip: run targeted collection for this process, e.g. sudo ./collector 0 {selected_pid}")
     else:
         proc_df = proc_df.sort_values(by="timestamp_s")
         lat = proc_df["latency_us"].to_numpy(dtype=float)

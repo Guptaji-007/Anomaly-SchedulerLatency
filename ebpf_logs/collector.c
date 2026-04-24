@@ -68,6 +68,16 @@ static int resolve_bpf_obj_path(char *out, size_t size, const char *exe_dir) {
     return -1;
 }
 
+static void resolve_output_path(char *out, size_t size, const char *env_name,
+                                const char *default_dir, const char *default_file) {
+    const char *env_path = getenv(env_name);
+    if (env_path && env_path[0] != '\0') {
+        snprintf(out, size, "%s", env_path);
+        return;
+    }
+    build_path(out, size, default_dir, default_file);
+}
+
 void sig_handler(int sig) { 
     exiting = 1;
     printf("\n Received signal - stopping collector...\n");
@@ -194,8 +204,10 @@ int main(int argc, char **argv) {
 
     char events_path[PATH_MAX] = {0};
     char dataset_path[PATH_MAX] = {0};
-    build_path(events_path, sizeof(events_path), exe_dir, "ebpf_events.csv");
-    build_path(dataset_path, sizeof(dataset_path), exe_dir, "dataset.csv");
+    resolve_output_path(events_path, sizeof(events_path), "SL_EVENTS_CSV",
+                        exe_dir, "ebpf_events.csv");
+    resolve_output_path(dataset_path, sizeof(dataset_path), "SL_DATASET_CSV",
+                        exe_dir, "dataset.csv");
 
     signal(SIGINT, sig_handler);
     struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
@@ -363,3 +375,4 @@ int main(int argc, char **argv) {
     fclose(fp);
     return 0;
 }
+

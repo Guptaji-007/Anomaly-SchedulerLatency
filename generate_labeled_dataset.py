@@ -144,15 +144,16 @@ class WorkloadDatasetGenerator:
             self._generate_synthetic_for_workload(label)
             return True
         
-        # Start latency collector
+        # Start latency collector with label (0 or 1 for workload type)
         log_file = os.path.join(self.ebpf_logs_dir, f"{label}_latency.log")
         
         try:
             print(f"\nStarting collector...")
             with open(log_file, 'w') as f:
-                # Run collector in background
+                # Run collector: ./collector <label: 0|1> [target_tgid] [min_latency_us] [sample_rate]
+                # Use label 0 for all workloads (target_tgid=0 means all processes)
                 collector_proc = subprocess.Popen(
-                    [self.collector_bin, label, "1", "1", "100"],
+                    [self.collector_bin, "0", "0", "10", "1"],
                     stdout=f,
                     stderr=subprocess.STDOUT,
                     preexec_fn=os.setsid if hasattr(os, 'setsid') else None
@@ -161,8 +162,8 @@ class WorkloadDatasetGenerator:
             # Give collector time to attach
             time.sleep(1)
             
-            # Run workload
-            print(f"Starting workload: {workload_name}")
+            # Run workload separately while collector is monitoring
+            print(f"Running workload: {workload_name}")
             workload_proc = subprocess.Popen(
                 [binary_path],
                 stdout=subprocess.PIPE,
@@ -201,7 +202,10 @@ class WorkloadDatasetGenerator:
             
         except subprocess.TimeoutExpired:
             print(f"⚠ Workload timeout")
-            workload_proc.kill()
+            try:
+                workload_proc.kill()
+            except:
+                pass
             return False
         except Exception as e:
             print(f"✗ Error: {e}")
@@ -217,16 +221,6 @@ class WorkloadDatasetGenerator:
             print(f"⚠ Log file not found: {log_file}")
             return None
         
-        latencies = []
-        
-        # Try multiple patterns to match different collector output formats
-        patterns = [
-            r'latency[:\s]+([\d\.]+)\s*(?:us|μs|µs)?',
-            r'([\d\.]+)\s*(?:us|μs|µs)',
-            r'lat[ency]*\s*[=:]\s*([\d\.]+)',
-            r'\b([\d]{2,5})\b',  # Any number that looks like latency
-        ]
-        
         try:
             with open(log_file, 'r', errors='ignore') as f:
                 content = f.read()
@@ -234,19 +228,24 @@ class WorkloadDatasetGenerator:
             # If file is empty or very small, return None
             if len(content) < 10:
                 print(f"⚠ Log file empty or too small")
+                print(f"DEBUG: File content: {repr(content[:100])}")
                 return None
             
-            # Try each pattern
-            for pattern_str in patterns:
-                pattern = re.compile(pattern_str)
-                matches = pattern.findall(content)
-                if matches:
-                    try:
-                        latencies = [float(m) for m in matches if 1 < float(m) < 100000]
-                        if latencies:
-                            break
-                    except ValueError:
-                        continue
+            print(f"DEBUG: Parsing {len(content)} bytes from {log_file}")
+            print(f"DEBUG: First 200 chars: {content[:200]}")
+            
+            latencies = []
+            
+            # Try to extract all numbers that look like latencies
+            # Collector likely outputs numbers separated by newlines or spaces
+            numbers = re.findall(r'[\d\.]+', content)
+            
+            if numbers:
+                try:
+                    # Filter for reasonable latency values (1-100000 microseconds)
+                    latencies = [float(n) for n in numbers if 1 < float(n) < 100000]
+                except ValueError:
+                    pass
                         
         except Exception as e:
             print(f"⚠ Error parsing log: {e}")

@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-Master Dataset Generator
-Runs all workloads and collects latency measurements with labels
-Creates: labeled_dataset.csv with (latency_us, workload_cause)
+===================================================================
+GENERATE LABELED DATASET - Using Collector Aggregated Statistics
+===================================================================
+Runs workloads with collector, collects window-based statistics
+Outputs: labeled dataset with 15 features per workload window
 """
 
-import os
 import subprocess
-import time
+import os
 import sys
-import csv
+import time
+import pandas as pd
 from pathlib import Path
-from collections import defaultdict
+from datetime import datetime
+import csv
 
-
-class WorkloadDatasetGenerator:
+class DatasetGenerator:
     """Generate labeled dataset by running workloads"""
     
     WORKLOADS = [

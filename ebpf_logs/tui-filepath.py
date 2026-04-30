@@ -1337,6 +1337,7 @@ class LatencyDashboard(App):
                 cause_model_path=CAUSE_MODEL_PATH,
                 window_size_ms=100,
                 alert_threshold=0.7,
+                min_events=3,  # Reduced from default 5 to allow detection on sparser data
             )
             self._detection_message = "Models loaded successfully."
         except Exception as exc:
@@ -1371,33 +1372,81 @@ class LatencyDashboard(App):
 
         self._detector.events_buffer.clear()
         self._detector.add_events_batch(batch)
+        
+        buffer_size = len(self._detector.events_buffer)
         try:
             result = self._detector.full_detection()
-            return {"status": "ok", "result": result, "pid": pid}
+            return {
+                "status": "ok",
+                "result": result,
+                "pid": pid,
+                "buffer_size": buffer_size,
+                "min_events_required": self._detector.min_events,
+                "total_df_events": len(df),
+            }
         except Exception as exc:
-            return {"status": "error", "message": f"Detection failed: {exc}"}
+            import traceback
+            return {
+                "status": "error",
+                "message": f"Detection failed: {exc}",
+                "traceback": traceback.format_exc(),
+                "buffer_size": buffer_size,
+            }
 
     def _format_detection_output(self) -> str:
         if not self._detection_result:
             return "No detection run yet."
 
         res = self._detection_result
+        
+        # Show error status
+        if res.get("status") == "error":
+            lines = [
+                f"ERROR: {res.get('message', '-')}",
+                f"Buffer size: {res.get('buffer_size', '?')} events",
+            ]
+            if res.get("traceback"):
+                lines.append("")
+                lines.append("Traceback:")
+                lines.append(res.get("traceback", ""))
+            return "\n".join(lines)
+        
+        # Show data status issues
         if res.get("status") != "ok":
             return f"Status: {res.get('status')}\nMessage: {res.get('message', '-')}"
 
+        # Show diagnostic info
+        buffer_size = res.get("buffer_size", "?")
+        min_events = res.get("min_events_required", "?")
+        total_df_events = res.get("total_df_events", "?")
+        
         out = res["result"]
         anomaly = out.get("anomaly_detection") or {}
         cause = out.get("cause_classification") or {}
 
+        # If detection returned None, show why
         if not out.get("anomaly_detection") and not out.get("cause_classification"):
-            return (
-                f"PID: {res.get('pid')}\n"
-                "Status: Detection did not run on current window/buffer.\n"
-                "Hint: collect more events or reduce sample rate (1/N closer to 1)."
-            )
+            lines = [
+                f"PID: {res.get('pid')}",
+                f"",
+                f"CSV has {total_df_events} events for this PID",
+                f"Buffer size: {buffer_size} events",
+                f"Min events required: {min_events}",
+                f"",
+                "Status: Detection did NOT run",
+                "Reason: Buffer has fewer events than minimum required.",
+                "",
+                "Actions:",
+                "  1. Check that CSV file was populated by collector",
+                "  2. Verify events exist for the selected PID",
+                "  3. Try: collect more data or lower min_events threshold",
+            ]
+            return "\n".join(lines)
 
+        # Normal output when detection ran successfully
         lines = [
             f"PID: {res.get('pid')}",
+            f"Buffer: {buffer_size} events",
             f"Timestamp: {out.get('timestamp', '-')}",
             "",
             "Anomaly Detection",

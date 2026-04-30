@@ -54,6 +54,24 @@ class DatasetGenerator:
         """
         df = pd.read_csv(csv_path)
 
+        # ── Normalise column names to internal convention ──────────────────────
+        # The live eBPF collector writes:  timestamp_ns, latency_us, pid, tgid, comm, cpu_id, priority, label
+        # The older/test format uses:      ts_ns, latency_ns, pid, cpu_id, priority, comm
+        # We normalise everything to the internal convention ts_ns / latency_ns.
+        rename_map = {}
+        if 'timestamp_ns' in df.columns and 'ts_ns' not in df.columns:
+            rename_map['timestamp_ns'] = 'ts_ns'
+        if 'latency_us' in df.columns and 'latency_ns' not in df.columns:
+            rename_map['latency_us'] = 'latency_ns'
+            # latency_us -> latency_ns: multiply by 1000 after rename
+        if 'tgid' in df.columns and 'pid' not in df.columns:
+            rename_map['tgid'] = 'pid'
+        if rename_map:
+            df = df.rename(columns=rename_map)
+        # If we renamed latency_us -> latency_ns, the values are still in us; convert.
+        if 'latency_us' in rename_map:
+            df['latency_ns'] = df['latency_ns'] * 1000.0
+
         # Detect supervised/aggregated format
         supervised_cols = {'timestamp', 'switch_count', 'avg_lat', 'min_lat', 'max_lat',
                            'p95_lat', 'p99_lat', 'stddev_lat', 'over20', 'over50', 'over100',

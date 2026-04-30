@@ -40,35 +40,57 @@ class RealtimeDetector:
         self.anomaly_detector = None
         self.cause_classifier = None
         # DatasetGenerator is imported lazily to avoid requiring pandas at import time
-        try:
-            from ml_model.dataset_generator import DatasetGenerator  # type: ignore
-        except Exception:
-            # If import fails, keep dataset_gen as None and surface errors when used.
-            DatasetGenerator = None  # type: ignore
+        DatasetGenerator = None
+        for _mod in ('dataset_generator', 'ml_model.dataset_generator'):
+            try:
+                import importlib
+                _m = importlib.import_module(_mod)
+                DatasetGenerator = getattr(_m, 'DatasetGenerator')
+                break
+            except Exception:
+                continue
         if DatasetGenerator is not None:
             self.dataset_gen = DatasetGenerator(window_size_ms=window_size_ms, stride_ms=window_size_ms)
             self.label_to_name = dict(DatasetGenerator.LABEL_TO_NAME)
         else:
             self.dataset_gen = None
-            self.label_to_name = {}
+            self.label_to_name = {
+                0: 'baseline', 1: 'cpu_contention', 2: 'heavy_contention',
+                3: 'disk_io', 4: 'memory_pressure', 5: 'lock_contention',
+                6: 'ipc_communication', 7: 'context_switching', 8: 'mixed', 9: 'anomaly',
+            }
         self.window_size_ns = int(window_size_ms * 1_000_000)
         self.alert_threshold = alert_threshold
         self.min_events = max(1, int(min_events))
         
         # Load models if provided (import trainer classes lazily)
         if anomaly_model_path:
-            try:
-                from ml_model.model_trainer import AnomalyDetector  # type: ignore
-            except Exception as e:
-                raise RuntimeError(f"Could not import AnomalyDetector: {e}")
+            AnomalyDetector = None
+            for _mod in ('model_trainer', 'ml_model.model_trainer'):
+                try:
+                    import importlib
+                    _m = importlib.import_module(_mod)
+                    AnomalyDetector = getattr(_m, 'AnomalyDetector')
+                    break
+                except Exception:
+                    continue
+            if AnomalyDetector is None:
+                raise RuntimeError("Could not import AnomalyDetector from model_trainer or ml_model.model_trainer")
             self.anomaly_detector = AnomalyDetector()
             self.anomaly_detector.load(anomaly_model_path)
 
         if cause_model_path:
-            try:
-                from ml_model.model_trainer import CauseClassifier  # type: ignore
-            except Exception as e:
-                raise RuntimeError(f"Could not import CauseClassifier: {e}")
+            CauseClassifier = None
+            for _mod in ('model_trainer', 'ml_model.model_trainer'):
+                try:
+                    import importlib
+                    _m = importlib.import_module(_mod)
+                    CauseClassifier = getattr(_m, 'CauseClassifier')
+                    break
+                except Exception:
+                    continue
+            if CauseClassifier is None:
+                raise RuntimeError("Could not import CauseClassifier from model_trainer or ml_model.model_trainer")
             self.cause_classifier = CauseClassifier()
             self.cause_classifier.load(cause_model_path)
         
@@ -93,7 +115,6 @@ class RealtimeDetector:
             window_size_ns = self.dataset_gen.window_size_ns if self.dataset_gen is not None else self.window_size_ns
         
         if len(self.events_buffer) == 0:
-            # If pandas is unavailable return an empty list-convertible object
             if pd is None:
                 return []
             return pd.DataFrame()
@@ -102,11 +123,20 @@ class RealtimeDetector:
             events_list = list(self.events_buffer)
         
         if pd is None:
-            # Cannot build DataFrame without pandas; return raw list
             return events_list
         df = pd.DataFrame(events_list)
         if df.empty:
             return df
+        
+        # Normalise timestamp column: collector emits timestamp_ns; internal convention is ts_ns
+        if 'timestamp_ns' in df.columns and 'ts_ns' not in df.columns:
+            df = df.rename(columns={'timestamp_ns': 'ts_ns'})
+        # Normalise latency column: collector emits latency_us; internal convention is latency_ns
+        if 'latency_us' in df.columns and 'latency_ns' not in df.columns:
+            df['latency_ns'] = df['latency_us'] * 1000.0
+        
+        if 'ts_ns' not in df.columns:
+            return df   # Cannot filter; return everything
         
         # Get events from last window
         max_ts = df['ts_ns'].max()
@@ -120,7 +150,15 @@ class RealtimeDetector:
             events_list = list(self.events_buffer)
         if pd is None:
             return events_list
-        return pd.DataFrame(events_list)
+        df = pd.DataFrame(events_list)
+        if df.empty:
+            return df
+        # Normalise column names (same as _get_recent_window)
+        if 'timestamp_ns' in df.columns and 'ts_ns' not in df.columns:
+            df = df.rename(columns={'timestamp_ns': 'ts_ns'})
+        if 'latency_us' in df.columns and 'latency_ns' not in df.columns:
+            df['latency_ns'] = df['latency_us'] * 1000.0
+        return df
     
     def detect_anomaly(self) -> Optional[Dict]:
         """
@@ -154,15 +192,24 @@ class RealtimeDetector:
         is_anomaly = predictions[0] == -1
         anomaly_score = float(scores[0])
         
+        # IsolationForest score_samples() returns values in roughly [-0.5, 0.5].
+        # More negative = more anomalous. We convert to a 0-1 confidence where
+        # 1.0 = most anomalous.
+        score_min = self.anomaly_detector.stats.get('anomaly_scores_min', -0.5)
+        score_max = self.anomaly_detector.stats.get('anomaly_scores_max',  0.5)
+        score_range = (score_max - score_min) or 1.0
+        # Confidence: 1.0 when score is at its minimum (most anomalous)
+        confidence = float(np.clip((score_max - anomaly_score) / score_range, 0.0, 1.0))
+
         result = {
             'timestamp': datetime.now().isoformat(),
             'is_anomaly': is_anomaly,
             'anomaly_score': anomaly_score,
             'n_events': len(window_events),
-            'latency_mean_ns': features['latency_mean'],
-            'latency_p99_ns': features['latency_p99'],
-            'latency_max_ns': features['latency_max'],
-            'confidence': abs(anomaly_score) / (self.anomaly_detector.stats.get('anomaly_scores_max', 1.0))
+            'latency_mean_us': features['latency_mean'],
+            'latency_p99_us': features['latency_p99'],
+            'latency_max_us': features['latency_max'],
+            'confidence': confidence,
         }
         
         return result

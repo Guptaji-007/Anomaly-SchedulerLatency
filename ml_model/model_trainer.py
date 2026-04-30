@@ -220,10 +220,8 @@ class CauseClassifier:
             'n_classes': len(self.classes),
             'train_accuracy': float(train_acc),
             'validation_accuracy': float(val_acc),
-            'train_predictions': train_pred,
-            'val_predictions': val_pred,
-            'y_train': y_train.values,
-            'y_val': y_val.values,
+            # NOTE: raw prediction arrays intentionally excluded from stats so
+            # save_pipeline_config() (json.dump) and pickle both stay clean.
         }
         
         print(f"  Train accuracy: {train_acc:.4f}")
@@ -339,9 +337,13 @@ class CauseClassifier:
         return result_df
     
     def _label_to_name(self, label: int) -> str:
-        """Convert label to workload name"""
-        from dataset_generator import DatasetGenerator
-        return DatasetGenerator.LABEL_TO_NAME.get(label, f'unknown_{label}')
+        """Convert label to workload name (inline mapping avoids import-path issues)."""
+        _MAP = {
+            0: 'baseline', 1: 'cpu_contention', 2: 'heavy_contention',
+            3: 'disk_io', 4: 'memory_pressure', 5: 'lock_contention',
+            6: 'ipc_communication', 7: 'context_switching', 8: 'mixed', 9: 'anomaly',
+        }
+        return _MAP.get(int(label), f'unknown_{label}')
     
     def get_feature_importance(self, top_n: int = 15) -> pd.DataFrame:
         """Get top N most important features"""

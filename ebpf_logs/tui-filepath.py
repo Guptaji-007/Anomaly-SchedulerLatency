@@ -335,8 +335,114 @@ def resolve_events_path(path: str) -> str:
     return path
 
 
+def _synthesize_runtime_events_from_aggregated(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert aggregated training rows into raw-like runtime events.
+
+    The detector expects per-event rows with latency_us, cpu_id, priority, and
+    timestamp_ns. When a user points the TUI at the aggregated training dataset,
+    we synthesize a stable event stream that approximates the aggregated window
+    statistics so the runtime detector can still operate.
+    """
+    if df.empty:
+        return pd.DataFrame(columns=[
+            "timestamp_ns", "pid", "tgid", "comm", "cpu_id",
+            "priority", "latency_us", "label", "timestamp_s",
+        ])
+
+    def _numeric_or_default(value, default, integer: bool = False):
+        try:
+            numeric = pd.to_numeric(value, errors="coerce")
+        except Exception:
+            return default
+        if pd.isna(numeric):
+            return default
+        return int(numeric) if integer else float(numeric)
+
+    label_names = {
+        0: "baseline",
+        1: "cpu_contention",
+        2: "heavy_contention",
+        3: "disk_io",
+        4: "memory_pressure",
+        5: "lock_contention",
+        6: "ipc_communication",
+        7: "context_switching",
+        8: "mixed",
+        9: "anomaly",
+    }
+
+    rows = []
+    for index, row in enumerate(df.itertuples(index=False)):
+        row_dict = row._asdict()
+        label_value = _numeric_or_default(row_dict.get("label", 0), 0, integer=True)
+        pseudo_pid = 10_000 + max(0, label_value)
+        pseudo_comm = label_names.get(label_value, f"label_{label_value}")
+
+        timestamp_value = row_dict.get("timestamp", index)
+        try:
+            timestamp_ns = int(float(timestamp_value) * 1_000_000_000)
+        except Exception:
+            timestamp_ns = int(index * 1_000_000_000)
+
+        switch_count = _numeric_or_default(row_dict.get("switch_count", 1), 1, integer=True)
+        switch_count = max(1, switch_count)
+
+        avg_lat = _numeric_or_default(row_dict.get("avg_lat", 0.0), 0.0)
+        min_lat = _numeric_or_default(row_dict.get("min_lat", avg_lat), avg_lat)
+        max_lat = _numeric_or_default(row_dict.get("max_lat", avg_lat), avg_lat)
+        p95_lat = _numeric_or_default(row_dict.get("p95_lat", avg_lat), avg_lat)
+        p99_lat = _numeric_or_default(row_dict.get("p99_lat", avg_lat), avg_lat)
+        stddev_lat = _numeric_or_default(row_dict.get("stddev_lat", 0.0), 0.0)
+        avg_prio = _numeric_or_default(row_dict.get("avg_prio", 0.0), 0.0)
+        highest_prio = _numeric_or_default(row_dict.get("highest_prio", avg_prio), avg_prio)
+
+        rng_seed = (timestamp_ns ^ (label_value * 1_001) ^ (index * 9_973)) & 0xFFFFFFFF
+        rng = np.random.default_rng(rng_seed)
+        latencies = rng.normal(loc=avg_lat, scale=max(stddev_lat, 1.0), size=switch_count)
+        latencies = np.clip(latencies, min_lat, max_lat)
+        if switch_count >= 1:
+            latencies[0] = min_lat
+            latencies[-1] = max_lat
+        if switch_count >= 3:
+            latencies[-2] = max(latencies[-2], p99_lat)
+        if switch_count >= 5:
+            latencies[-3] = max(latencies[-3], p95_lat)
+
+        priority_spread = max(1.0, abs(highest_prio - avg_prio) / 4.0)
+        priorities = rng.normal(loc=avg_prio, scale=priority_spread, size=switch_count)
+        priorities = np.clip(priorities, 0, max(highest_prio, avg_prio + 3.0 * priority_spread))
+        if switch_count >= 1:
+            priorities[-1] = highest_prio
+
+        cpu_count = max(1, min(4, switch_count))
+        cpu_ids = np.arange(switch_count, dtype=int) % cpu_count
+        time_offsets = np.linspace(0, 99_000_000, switch_count, dtype=np.int64)
+
+        for event_index in range(switch_count):
+            rows.append({
+                "timestamp_ns": int(timestamp_ns + time_offsets[event_index]),
+                "pid": int(pseudo_pid),
+                "tgid": int(pseudo_pid),
+                "comm": pseudo_comm,
+                "cpu_id": int(cpu_ids[event_index]),
+                "priority": int(round(priorities[event_index])),
+                "latency_us": float(latencies[event_index]),
+                "label": int(label_value),
+                "timestamp_s": float((timestamp_ns + time_offsets[event_index]) / 1e9),
+            })
+
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return pd.DataFrame(columns=[
+            "timestamp_ns", "pid", "tgid", "comm", "cpu_id",
+            "priority", "latency_us", "label", "timestamp_s",
+        ])
+    return out.sort_values(by="timestamp_ns").reset_index(drop=True)
+
+
 def load_ebpf_events(path: str, max_rows: int = 30000) -> pd.DataFrame:
-    required = ["timestamp_ns","pid","tgid","comm","cpu_id","priority","latency_us","label"]
+    required = ["timestamp_ns", "pid", "tgid", "comm", "cpu_id", "priority", "latency_us", "label"]
+    aggregated = ["timestamp", "switch_count", "avg_lat", "min_lat", "max_lat", "p95_lat", "p99_lat", "stddev_lat", "over20", "over50", "over100", "avg_prio", "highest_prio", "label"]
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             header     = f.readline().strip()
@@ -347,25 +453,31 @@ def load_ebpf_events(path: str, max_rows: int = 30000) -> pd.DataFrame:
     except Exception:
         return pd.DataFrame(columns=required + ["timestamp_s"])
 
-    if any(c not in df.columns for c in required):
+    if all(c in df.columns for c in required):
+        df = df.copy()
+        for col in ["timestamp_ns", "pid", "tgid", "cpu_id", "priority", "latency_us", "label"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        df = df.dropna(subset=["timestamp_ns", "pid", "tgid", "latency_us"])
+        if df.empty:
+            return pd.DataFrame(columns=required + ["timestamp_s"])
+
+        df["timestamp_ns"] = df["timestamp_ns"].astype("int64")
+        df["pid"]          = df["pid"].astype("int32")
+        df["tgid"]         = df["tgid"].astype("int32")
+        df["cpu_id"]       = df["cpu_id"].fillna(-1).astype("int32")
+        df["priority"]     = df["priority"].fillna(-1).astype("int32")
+        df["label"]        = df["label"].fillna(0).astype("int32")
+        df["comm"]         = df["comm"].astype(str)
+        df["timestamp_s"]  = df["timestamp_ns"] / 1e9
+        df.attrs["source_schema"] = "raw"
+        return df.sort_values(by="timestamp_ns").reset_index(drop=True)
+
+    if not all(c in df.columns for c in aggregated):
         return pd.DataFrame(columns=required + ["timestamp_s"])
 
-    df = df.copy()
-    for col in ["timestamp_ns","pid","tgid","cpu_id","priority","latency_us","label"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=["timestamp_ns","pid","tgid","latency_us"])
-    if df.empty:
-        return pd.DataFrame(columns=required + ["timestamp_s"])
-
-    df["timestamp_ns"] = df["timestamp_ns"].astype("int64")
-    df["pid"]          = df["pid"].astype("int32")
-    df["tgid"]         = df["tgid"].astype("int32")
-    df["cpu_id"]       = df["cpu_id"].fillna(-1).astype("int32")
-    df["priority"]     = df["priority"].fillna(-1).astype("int32")
-    df["label"]        = df["label"].fillna(0).astype("int32")
-    df["comm"]         = df["comm"].astype(str)
-    df["timestamp_s"]  = df["timestamp_ns"] / 1e9
-    return df.sort_values(by="timestamp_ns").reset_index(drop=True)
+    synth = _synthesize_runtime_events_from_aggregated(df)
+    synth.attrs["source_schema"] = "aggregated"
+    return synth
 
 
 def summarize_latency(df: pd.DataFrame) -> pd.DataFrame:

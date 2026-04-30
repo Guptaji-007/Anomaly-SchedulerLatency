@@ -56,7 +56,7 @@ EVENTS_DEFAULT = MAIN_EVENTS_FILE
 
 _realtime_import_error = None
 # Ensure both the project root and ml_model package are importable.
-PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 if os.path.isdir(ML_MODEL_DIR) and ML_MODEL_DIR not in sys.path:
@@ -1371,8 +1371,11 @@ class LatencyDashboard(App):
 
         self._detector.events_buffer.clear()
         self._detector.add_events_batch(batch)
-        result = self._detector.full_detection()
-        return {"status": "ok", "result": result, "pid": pid}
+        try:
+            result = self._detector.full_detection()
+            return {"status": "ok", "result": result, "pid": pid}
+        except Exception as exc:
+            return {"status": "error", "message": f"Detection failed: {exc}"}
 
     def _format_detection_output(self) -> str:
         if not self._detection_result:
@@ -1385,6 +1388,13 @@ class LatencyDashboard(App):
         out = res["result"]
         anomaly = out.get("anomaly_detection") or {}
         cause = out.get("cause_classification") or {}
+
+        if not out.get("anomaly_detection") and not out.get("cause_classification"):
+            return (
+                f"PID: {res.get('pid')}\n"
+                "Status: Detection did not run on current window/buffer.\n"
+                "Hint: collect more events or reduce sample rate (1/N closer to 1)."
+            )
 
         lines = [
             f"PID: {res.get('pid')}",

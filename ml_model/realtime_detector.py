@@ -25,7 +25,8 @@ class RealtimeDetector:
     """Real-time anomaly detection engine"""
     
     def __init__(self, anomaly_model_path: str = None, cause_model_path: str = None,
-                 window_size_ms: int = 100, alert_threshold: float = 0.7):
+                 window_size_ms: int = 100, alert_threshold: float = 0.7,
+                 min_events: int = 5):
         """
         Initialize real-time detector
         
@@ -34,6 +35,7 @@ class RealtimeDetector:
             cause_model_path: Path to saved cause classifier model
             window_size_ms: Feature extraction window size
             alert_threshold: Confidence threshold for alerts
+            min_events: Minimum events required to run detection/classification
         """
         self.anomaly_detector = None
         self.cause_classifier = None
@@ -45,9 +47,13 @@ class RealtimeDetector:
             DatasetGenerator = None  # type: ignore
         if DatasetGenerator is not None:
             self.dataset_gen = DatasetGenerator(window_size_ms=window_size_ms, stride_ms=window_size_ms)
+            self.label_to_name = dict(DatasetGenerator.LABEL_TO_NAME)
         else:
             self.dataset_gen = None
+            self.label_to_name = {}
+        self.window_size_ns = int(window_size_ms * 1_000_000)
         self.alert_threshold = alert_threshold
+        self.min_events = max(1, int(min_events))
         
         # Load models if provided (import trainer classes lazily)
         if anomaly_model_path:
@@ -84,7 +90,7 @@ class RealtimeDetector:
     def _get_recent_window(self, window_size_ns: int = None) -> Any:
         """Get recent events within window"""
         if window_size_ns is None:
-            window_size_ns = self.dataset_gen.window_size_ns
+            window_size_ns = self.dataset_gen.window_size_ns if self.dataset_gen is not None else self.window_size_ns
         
         if len(self.events_buffer) == 0:
             # If pandas is unavailable return an empty list-convertible object
@@ -107,6 +113,14 @@ class RealtimeDetector:
         min_ts = max_ts - window_size_ns
         
         return df[df['ts_ns'] >= min_ts]
+
+    def _get_all_buffer_events(self) -> Any:
+        """Return all buffered events as DataFrame when possible."""
+        with self.lock:
+            events_list = list(self.events_buffer)
+        if pd is None:
+            return events_list
+        return pd.DataFrame(events_list)
     
     def detect_anomaly(self) -> Optional[Dict]:
         """
@@ -119,7 +133,10 @@ class RealtimeDetector:
             return None
         
         window_events = self._get_recent_window()
-        if len(window_events) < 5:
+        if len(window_events) < self.min_events:
+            # Fallback for sparse streams: use full buffer when the recent window is too small.
+            window_events = self._get_all_buffer_events()
+        if len(window_events) < self.min_events:
             return None
         
         # Extract features
@@ -161,7 +178,10 @@ class RealtimeDetector:
             return None
         
         window_events = self._get_recent_window()
-        if len(window_events) < 5:
+        if len(window_events) < self.min_events:
+            # Fallback for sparse streams: use full buffer when the recent window is too small.
+            window_events = self._get_all_buffer_events()
+        if len(window_events) < self.min_events:
             return None
         
         # Extract features
@@ -180,7 +200,7 @@ class RealtimeDetector:
         
         if probabilities is not None:
             class_probs = {
-                DatasetGenerator.LABEL_TO_NAME.get(int(self.cause_classifier.classes[i]), f'class_{i}'): 
+                self.label_to_name.get(int(self.cause_classifier.classes[i]), f'class_{i}'): 
                 float(probabilities[0, i])
                 for i in range(len(self.cause_classifier.classes))
             }
@@ -191,7 +211,7 @@ class RealtimeDetector:
         
         result = {
             'timestamp': datetime.now().isoformat(),
-            'predicted_cause': DatasetGenerator.LABEL_TO_NAME.get(predicted_class, f'unknown_{predicted_class}'),
+            'predicted_cause': self.label_to_name.get(predicted_class, f'unknown_{predicted_class}'),
             'predicted_class': predicted_class,
             'confidence': confidence,
             'all_probabilities': class_probs,

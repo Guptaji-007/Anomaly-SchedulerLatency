@@ -90,6 +90,23 @@ class DatasetGenerator:
         """
         df = df.copy()
 
+        # Drop columns not used by training or that may leak information
+        for drop_col in ("target_tgid", "tgid", "highest_prio"):
+            if drop_col in df.columns:
+                df = df.drop(columns=[drop_col])
+
+        # Normalize timestamp: allow numeric epoch or ISO string
+        if 'timestamp' in df.columns:
+            try:
+                # If numeric (seconds or ns), keep as numeric
+                df['timestamp'] = pd.to_numeric(df['timestamp'], errors='coerce')
+            except Exception:
+                # Try parsing as datetimes and convert to epoch seconds
+                try:
+                    df['timestamp'] = pd.to_datetime(df['timestamp']).astype('int64') // 10**9
+                except Exception:
+                    pass
+
         # Map columns to expected feature names
         mapping = {
             'avg_lat': 'latency_mean',

@@ -3,17 +3,22 @@ Real-time Anomaly Detection and Cause Classification
 Integrates with collector to detect anomalies in real-time
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Optional, Tuple
+try:
+    import pandas as pd
+    import numpy as np
+except Exception:
+    pd = None  # type: ignore
+    np = None  # type: ignore
+from typing import Any, Dict, List, Optional, Tuple
 from collections import deque
 from datetime import datetime
 import json
 import threading
 import time
 
-from model_trainer import AnomalyDetector, CauseClassifier
-from dataset_generator import DatasetGenerator
+# Don't import heavy trainer classes at module import time; import lazily inside __init__
+# Delay importing DatasetGenerator (it requires pandas) until runtime to avoid
+# import-time failures when the environment doesn't have optional heavy deps.
 
 
 class RealtimeDetector:
@@ -32,15 +37,32 @@ class RealtimeDetector:
         """
         self.anomaly_detector = None
         self.cause_classifier = None
-        self.dataset_gen = DatasetGenerator(window_size_ms=window_size_ms, stride_ms=window_size_ms)
+        # DatasetGenerator is imported lazily to avoid requiring pandas at import time
+        try:
+            from ml_model.dataset_generator import DatasetGenerator  # type: ignore
+        except Exception:
+            # If import fails, keep dataset_gen as None and surface errors when used.
+            DatasetGenerator = None  # type: ignore
+        if DatasetGenerator is not None:
+            self.dataset_gen = DatasetGenerator(window_size_ms=window_size_ms, stride_ms=window_size_ms)
+        else:
+            self.dataset_gen = None
         self.alert_threshold = alert_threshold
         
-        # Load models if provided
+        # Load models if provided (import trainer classes lazily)
         if anomaly_model_path:
+            try:
+                from ml_model.model_trainer import AnomalyDetector  # type: ignore
+            except Exception as e:
+                raise RuntimeError(f"Could not import AnomalyDetector: {e}")
             self.anomaly_detector = AnomalyDetector()
             self.anomaly_detector.load(anomaly_model_path)
-        
+
         if cause_model_path:
+            try:
+                from ml_model.model_trainer import CauseClassifier  # type: ignore
+            except Exception as e:
+                raise RuntimeError(f"Could not import CauseClassifier: {e}")
             self.cause_classifier = CauseClassifier()
             self.cause_classifier.load(cause_model_path)
         
@@ -59,17 +81,23 @@ class RealtimeDetector:
         with self.lock:
             self.events_buffer.extend(events)
     
-    def _get_recent_window(self, window_size_ns: int = None) -> pd.DataFrame:
+    def _get_recent_window(self, window_size_ns: int = None) -> Any:
         """Get recent events within window"""
         if window_size_ns is None:
             window_size_ns = self.dataset_gen.window_size_ns
         
         if len(self.events_buffer) == 0:
+            # If pandas is unavailable return an empty list-convertible object
+            if pd is None:
+                return []
             return pd.DataFrame()
         
         with self.lock:
             events_list = list(self.events_buffer)
         
+        if pd is None:
+            # Cannot build DataFrame without pandas; return raw list
+            return events_list
         df = pd.DataFrame(events_list)
         if df.empty:
             return df
@@ -95,6 +123,8 @@ class RealtimeDetector:
             return None
         
         # Extract features
+        if self.dataset_gen is None:
+            raise RuntimeError("DatasetGenerator not available; install pandas to enable ML detection.")
         features = self.dataset_gen.extract_window_features(window_events)
         feature_df = pd.DataFrame([features])
         
@@ -135,6 +165,8 @@ class RealtimeDetector:
             return None
         
         # Extract features
+        if self.dataset_gen is None:
+            raise RuntimeError("DatasetGenerator not available; install pandas to enable ML classification.")
         features = self.dataset_gen.extract_window_features(window_events)
         feature_df = pd.DataFrame([features])
         

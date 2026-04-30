@@ -54,13 +54,24 @@ CMP_B_EVENTS_FILE = os.path.join(BASE_DIR, "ebpf_events_cmp_b.csv")
 # Default file used by the main section
 EVENTS_DEFAULT = MAIN_EVENTS_FILE
 
+_realtime_import_error = None
+# Ensure both the project root and ml_model package are importable.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 if os.path.isdir(ML_MODEL_DIR) and ML_MODEL_DIR not in sys.path:
     sys.path.insert(0, ML_MODEL_DIR)
 
 try:
-    from realtime_detector import RealtimeDetector
-except Exception:
-    RealtimeDetector = None
+    # Prefer package import for clarity on other machines/environments
+    from ml_model.realtime_detector import RealtimeDetector
+except Exception as _e:
+    try:
+        # Fallback to direct module import if package import fails
+        from realtime_detector import RealtimeDetector  # type: ignore
+    except Exception as _e2:
+        RealtimeDetector = None
+        _realtime_import_error = f"ml_model import failed: {_e} | fallback failed: {_e2}"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -1306,7 +1317,13 @@ class LatencyDashboard(App):
     def _load_detector(self) -> None:
         if RealtimeDetector is None:
             self._detector = None
-            self._detection_message = "Detection models unavailable. Import `realtime_detector` failed."
+            if _realtime_import_error:
+                self._detection_message = (
+                    "Detection models unavailable. Import `realtime_detector` failed: "
+                    + str(_realtime_import_error)
+                )
+            else:
+                self._detection_message = "Detection models unavailable. Import `realtime_detector` failed."
             return
 
         if not os.path.exists(ANOMALY_MODEL_PATH) or not os.path.exists(CAUSE_MODEL_PATH):

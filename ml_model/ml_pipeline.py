@@ -9,6 +9,7 @@ from pathlib import Path
 import argparse
 import json
 from datetime import datetime
+from typing import Dict
 
 from dataset_generator import DatasetGenerator
 from model_trainer import AnomalyDetector, CauseClassifier, ModelEvaluator
@@ -73,8 +74,12 @@ class MLPipeline:
         print("STEP 2: ANOMALY DETECTION TRAINING")
         print("="*60)
         
-        # Use only normal data (filter out labeled anomalies if present)
-        X = dataset.drop(['label', 'window_start_ts', 'window_end_ts'], axis=1, errors='ignore')
+        # Use only model features; drop ordering / metadata columns that can leak label information.
+        X = dataset.drop(
+            ['label', 'timestamp', 'ts_ns', 'window_start_ts', 'window_end_ts', 'priority_max', 'highest_prio'],
+            axis=1,
+            errors='ignore'
+        )
         
         self.anomaly_detector = AnomalyDetector(contamination=contamination)
         stats = self.anomaly_detector.train(X)
@@ -107,28 +112,32 @@ class MLPipeline:
         print("="*60)
         
         # Prepare data
-        feature_cols = [col for col in dataset.columns 
-                       if col not in ['label', 'window_start_ts', 'window_end_ts']]
+        feature_cols = [col for col in dataset.columns
+                       if col not in ['label', 'timestamp', 'ts_ns', 'window_start_ts', 'window_end_ts', 'priority_max', 'highest_prio']]
         X = dataset[feature_cols]
         y = dataset['label']
         
         # Split data
-        X_train, X_test, y_train, y_test = self.dataset_gen.split_train_test(
+        train_df, test_df = self.dataset_gen.split_train_test(
             dataset.copy(), test_ratio=test_size
         )
+
+        y_train = train_df['label']
+        y_test = test_df['label']
+        X_train = train_df.drop(['label', 'timestamp', 'ts_ns', 'window_start_ts', 'window_end_ts', 'priority_max', 'highest_prio'], axis=1, errors='ignore')
+        X_test = test_df.drop(['label', 'timestamp', 'ts_ns', 'window_start_ts', 'window_end_ts', 'priority_max', 'highest_prio'], axis=1, errors='ignore')
         
         # Train model
         self.cause_classifier = CauseClassifier(model_type=model_type)
         stats = self.cause_classifier.train(
-            X_train.drop(['label', 'window_start_ts', 'window_end_ts'], axis=1, errors='ignore'),
+            X_train,
             y_train,
             hyperparameter_tuning=hyperparameter_tuning
         )
         
         # Evaluate on test set
-        X_test_clean = X_test.drop(['label', 'window_start_ts', 'window_end_ts'], axis=1, errors='ignore')
         eval_results = ModelEvaluator.evaluate_classifier(
-            self.cause_classifier, X_test_clean, y_test,
+            self.cause_classifier, X_test, y_test,
             output_dir=str(self.output_dir)
         )
         

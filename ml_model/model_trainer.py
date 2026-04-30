@@ -21,7 +21,7 @@ from sklearn.metrics import (
     precision_recall_fscore_support, roc_auc_score, roc_curve,
     auc, precision_recall_curve
 )
-from sklearn.ensemble import OneClassSVM
+from sklearn.svm import OneClassSVM
 import matplotlib.pyplot as plt
 import seaborn as sns
 

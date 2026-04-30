@@ -11,6 +11,7 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import time
 from collections import deque
 from io import StringIO
@@ -41,6 +42,10 @@ except ImportError:
 # Paths  — everything is anchored to the directory of THIS script
 # ──────────────────────────────────────────────────────────────────────────────
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+ML_MODEL_DIR  = os.path.join(os.path.dirname(BASE_DIR), "ml_model")
+ML_OUTPUT_DIR = os.path.join(ML_MODEL_DIR, "run_output")
+ANOMALY_MODEL_PATH = os.path.join(ML_OUTPUT_DIR, "anomaly_detector.pkl")
+CAUSE_MODEL_PATH   = os.path.join(ML_OUTPUT_DIR, "cause_classifier.pkl")
 COLLECTOR_BIN = os.path.join(BASE_DIR, "collector")
 COLLECTOR_LOG = os.path.join(BASE_DIR, "collector_tui.log")
 MAIN_EVENTS_FILE  = os.path.join(BASE_DIR, "ebpf_events_main.csv")
@@ -48,6 +53,14 @@ CMP_A_EVENTS_FILE = os.path.join(BASE_DIR, "ebpf_events_cmp_a.csv")
 CMP_B_EVENTS_FILE = os.path.join(BASE_DIR, "ebpf_events_cmp_b.csv")
 # Default file used by the main section
 EVENTS_DEFAULT = MAIN_EVENTS_FILE
+
+if os.path.isdir(ML_MODEL_DIR) and ML_MODEL_DIR not in sys.path:
+    sys.path.insert(0, ML_MODEL_DIR)
+
+try:
+    from realtime_detector import RealtimeDetector
+except Exception:
+    RealtimeDetector = None
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -649,6 +662,11 @@ class LatencyDashboard(App):
         self._summary_df:       pd.DataFrame = pd.DataFrame()
         self._running_df:       pd.DataFrame = pd.DataFrame()
 
+        # ── Detection state ──────────────────────────────────────────────────
+        self._detector = None
+        self._detection_result: dict = {}
+        self._detection_message: str = ""
+
         # ── Refresh settings ───────────────────────────────────────────────────
         self._auto_refresh: bool          = True
         self._refresh_secs: int           = 5
@@ -756,6 +774,20 @@ class LatencyDashboard(App):
                         yield Label("Priority Distribution", classes="section-title")
                         with Container(classes="chart-box"):
                             yield Static("Select a process.", id="chart-prio")
+
+                    with TabPane("Detection", id="tab-detection"):
+                        yield Label("ML Detection Output", classes="section-title")
+                        yield Label(
+                            f"Models: {ANOMALY_MODEL_PATH} | {CAUSE_MODEL_PATH}",
+                            classes="sb-label",
+                        )
+                        with Horizontal():
+                            yield Button("Run Detection", id="btn-run-detection")
+                            yield Button("Reload Models", id="btn-reload-models")
+                        yield Label("Select a process and press Run Detection.",
+                                    id="detection-status", classes="cmd-display")
+                        with Container(classes="chart-box"):
+                            yield Static("No detection run yet.", id="detection-output")
 
                     with TabPane("Recent Events", id="tab-events"):
                         yield Label("Recent Events (last 200)", classes="section-title")
@@ -865,6 +897,7 @@ class LatencyDashboard(App):
     # ── lifecycle ──────────────────────────────────────────────────────────────
     def on_mount(self) -> None:
         self._init_tables()
+        self._load_detector()
         self._do_refresh()
         self._timer = self.set_interval(self._refresh_secs, self._tick)
 
@@ -892,6 +925,7 @@ class LatencyDashboard(App):
         self._refresh_cmp_charts()
         self._refresh_cmd_preview()
         self._refresh_all_collector_status()
+        self._refresh_detection_panel()
         self._refresh_log()
 
     # ── data loading ───────────────────────────────────────────────────────────
@@ -1267,6 +1301,124 @@ class LatencyDashboard(App):
                          str(row.tgid), str(row.pid), str(row.comm),
                          str(row.cpu_id), str(row.priority),
                          f"{row.latency_us:.2f}", str(row.label))
+
+    # ── detection panel ──────────────────────────────────────────────────────
+    def _load_detector(self) -> None:
+        if RealtimeDetector is None:
+            self._detector = None
+            self._detection_message = "Detection models unavailable. Import `realtime_detector` failed."
+            return
+
+        if not os.path.exists(ANOMALY_MODEL_PATH) or not os.path.exists(CAUSE_MODEL_PATH):
+            self._detector = None
+            self._detection_message = "Trained models not found. Run the ML training pipeline first."
+            return
+
+        try:
+            self._detector = RealtimeDetector(
+                anomaly_model_path=ANOMALY_MODEL_PATH,
+                cause_model_path=CAUSE_MODEL_PATH,
+                window_size_ms=100,
+                alert_threshold=0.7,
+            )
+            self._detection_message = "Models loaded successfully."
+        except Exception as exc:
+            self._detector = None
+            self._detection_message = f"Could not load models: {exc}"
+
+    def _run_detection(self, pid: Optional[int]) -> dict:
+        if pid is None:
+            return {"status": "no_pid", "message": "Select a process first."}
+        if self._detector is None:
+            self._load_detector()
+        if self._detector is None:
+            return {"status": "no_models", "message": self._detection_message}
+        if self._events_df_main.empty:
+            return {"status": "no_data", "message": "No eBPF data loaded yet."}
+
+        df = self._events_df_main[self._events_df_main["tgid"] == pid].copy()
+        if df.empty:
+            return {"status": "no_data", "message": f"No events found for PID {pid}."}
+
+        batch = []
+        for row in df.sort_values("timestamp_ns").tail(5000).itertuples():
+            batch.append({
+                "pid": int(row.pid),
+                "tgid": int(row.tgid),
+                "latency_ns": int(float(row.latency_us) * 1000.0),
+                "ts_ns": int(row.timestamp_ns),
+                "cpu_id": int(row.cpu_id),
+                "priority": int(row.priority),
+                "comm": str(row.comm),
+            })
+
+        self._detector.events_buffer.clear()
+        self._detector.add_events_batch(batch)
+        result = self._detector.full_detection()
+        return {"status": "ok", "result": result, "pid": pid}
+
+    def _format_detection_output(self) -> str:
+        if not self._detection_result:
+            return "No detection run yet."
+
+        res = self._detection_result
+        if res.get("status") != "ok":
+            return f"Status: {res.get('status')}\nMessage: {res.get('message', '-')}"
+
+        out = res["result"]
+        anomaly = out.get("anomaly_detection") or {}
+        cause = out.get("cause_classification") or {}
+
+        lines = [
+            f"PID: {res.get('pid')}",
+            f"Timestamp: {out.get('timestamp', '-')}",
+            "",
+            "Anomaly Detection",
+            f"  is_anomaly: {anomaly.get('is_anomaly', False)}",
+            f"  score: {anomaly.get('anomaly_score', '-')}",
+            f"  confidence: {anomaly.get('confidence', '-')}",
+            "",
+            "Cause Classification",
+            f"  cause: {cause.get('predicted_cause', '-')}",
+            f"  class: {cause.get('predicted_class', '-')}",
+            f"  confidence: {cause.get('confidence', '-')}",
+        ]
+        if cause.get("all_probabilities"):
+            lines.append("")
+            lines.append("Top probabilities")
+            probs = sorted(cause["all_probabilities"].items(), key=lambda kv: kv[1], reverse=True)
+            for name, score in probs[:5]:
+                lines.append(f"  {name}: {score:.3f}")
+        if out.get("alert"):
+            lines.append("")
+            lines.append(f"ALERT: {out.get('alert_message', '-')}")
+        return "\n".join(lines)
+
+    def _refresh_detection_panel(self) -> None:
+        status = self._detection_message
+        if self._selected_pid is None:
+            status = "Select a process first, then run detection."
+        elif self._detection_result.get("status") == "ok":
+            status = f"Detection ready for PID {self._selected_pid}."
+
+        self._set_static("#detection-output", self._format_detection_output())
+        try:
+            self.query_one("#detection-status", Label).update(status)
+        except NoMatches:
+            pass
+
+    @on(Button.Pressed, "#btn-run-detection")
+    def _on_run_detection(self) -> None:
+        self.action_run_detection()
+
+    @on(Button.Pressed, "#btn-reload-models")
+    def _on_reload_models(self) -> None:
+        self._load_detector()
+        self._refresh_detection_panel()
+
+    def action_run_detection(self) -> None:
+        self._detection_result = self._run_detection(self._selected_pid)
+        self._refresh_detection_panel()
 
     # ── main collector control ─────────────────────────────────────────────────
     def _refresh_cmd_preview(self) -> None:

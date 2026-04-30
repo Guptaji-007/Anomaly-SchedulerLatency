@@ -100,7 +100,6 @@ class DatasetGenerator:
             'p99_lat': 'latency_p99',
             'timestamp': 'window_start_ts',
             'avg_prio': 'priority_mean',
-            'highest_prio': 'priority_max',
             'switch_count': 'event_count',
         }
 
@@ -160,7 +159,7 @@ class DatasetGenerator:
             'latency_skewness', 'latency_kurtosis', 'latency_median_abs_dev',
             'event_count', 'event_rate', 'time_span_ns',
             'num_unique_cpus', 'cpu_concentration',
-            'priority_mean', 'priority_std', 'priority_min', 'priority_max',
+            'priority_mean', 'priority_std', 'priority_min',
             'outlier_ratio_3sigma', 'tail_latency_ratio'
         ]
 
@@ -363,7 +362,10 @@ class DatasetGenerator:
         """Split dataset into train/test sets while preserving label distribution"""
         from sklearn.model_selection import train_test_split
         
-        features = [col for col in df.columns if col not in ['label', 'window_start_ts', 'window_end_ts']]
+        features = [
+            col for col in df.columns
+            if col not in ['label', 'timestamp', 'ts_ns', 'window_start_ts', 'window_end_ts']
+        ]
         
         X = df[features]
         y = df['label']

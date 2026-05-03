@@ -101,7 +101,7 @@ OptionList > .option-list--option-highlighted { background: #1f6feb; color: #fff
 
 /* ── Collector panel ── */
 #collector-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; }
-#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; min-height: 8; }
+#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; min-height: 9; }
 .collector-title { color: #f78166; text-style: bold; margin-bottom: 1; }
 .cmd-display {
     background: #0d1117; border: solid #30363d;
@@ -783,6 +783,7 @@ class LatencyDashboard(App):
                 # Priority Control
                 with Container(id="priority-panel"):
                     yield Label("Priority Control", classes="collector-title")
+                    yield Label("Current Nice: (select a process)", id="lbl-current-nice", classes="sb-label")
                     with Horizontal(classes="cmp-btn-row"):
                         yield Label("Nice (-20 to 19): ", classes="sb-label")
                         yield Input(value="-5", id="inp-nice-val", classes="sb-input")
@@ -948,6 +949,7 @@ class LatencyDashboard(App):
         self._refresh_cmd_preview()
         self._refresh_all_collector_status()
         self._refresh_log()
+        self._refresh_priority_display()
 
     # ── data loading ───────────────────────────────────────────────────────────
     def _events_path(self) -> str:
@@ -1060,6 +1062,7 @@ class LatencyDashboard(App):
             pass
         self._refresh_cmd_preview()
         self._refresh_analysis()
+        self._refresh_priority_display()
 
     @on(Button.Pressed, "#btn-apply-pid")
     def _on_apply_pid(self) -> None:
@@ -1322,6 +1325,26 @@ class LatencyDashboard(App):
                          str(row.tgid), str(row.pid), str(row.comm),
                          str(row.cpu_id), str(row.priority),
                          f"{row.latency_us:.2f}", str(row.label))
+
+    def _refresh_priority_display(self) -> None:
+        pid = self._selected_pid
+        try:
+            lbl = self.query_one("#lbl-current-nice", Label)
+            if pid is None:
+                lbl.update("Current Nice: (select a process)")
+                return
+            if psutil is not None:
+                p = psutil.Process(pid)
+                n = p.nice()
+            else:
+                result = subprocess.run(["ps", "-o", "nice=", "-p", str(pid)], capture_output=True, text=True)
+                n = int(result.stdout.strip())
+            lbl.update(f"Current OS Nice for PID {pid}: {n}")
+        except Exception:
+            try:
+                self.query_one("#lbl-current-nice", Label).update(f"Current OS Nice for PID {pid}: (error/dead)")
+            except NoMatches:
+                pass
 
     # ── main collector control ─────────────────────────────────────────────────
     def _refresh_cmd_preview(self) -> None:

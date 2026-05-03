@@ -463,7 +463,8 @@ def sparkline_axes(values: list[float], width: int = 55, height: int = 10) -> st
     rows: list[str] = []
     for r in range(height):
         thr  = 1.0 - (r / max(height - 1, 1))
-        bars = "".join("*" if v >= thr else " " for v in norm)
+        bars = "".join("█" if v >= thr else " " for v in norm)
+        #bars = "".join("." if v >= thr else " " for v in norm)
         if r == 0:
             yl = f"{hi:7.1f}"
         elif r == height // 2:

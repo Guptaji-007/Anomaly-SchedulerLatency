@@ -144,20 +144,25 @@ ModalScreen { align: center middle; }
 #cmp-header { background: #161b22; border: solid #21262d; padding: 1; margin-bottom: 1; }
 .cmp-section-title { color: #d2a8ff; text-style: bold; margin-bottom: 1; }
 
-/* Two-column grid fills the tab horizontally */
-#cmp-grid { height: auto; }
+/* FIX 1: Give grid a bounded height (1fr) so child columns have a limit to trigger scrolling */
+#cmp-grid { height: 1fr; min-height: 20; }
 
-/* Each column is scrollable so long charts don't get cut off */
+/* FIX 2: Changed height to 1fr and added overflow-y: auto to enable actual scrolling */
 .cmp-col-a {
     width: 1fr; margin-right: 1;
     background: #0d1117; border: solid #f78166;
-    padding: 1; height: auto;
+    padding: 1; 
+    height: 1fr; 
+    overflow-y: auto; 
 }
 .cmp-col-b {
     width: 1fr;
     background: #0d1117; border: solid #3fb950;
-    padding: 1; height: auto;
+    padding: 1; 
+    height: 1fr; 
+    overflow-y: auto;
 }
+
 .cmp-head-a { color: #f78166; text-style: bold; text-align: center; margin-bottom: 1; }
 .cmp-head-b { color: #3fb950; text-style: bold; text-align: center; margin-bottom: 1; }
 
@@ -174,6 +179,7 @@ ModalScreen { align: center middle; }
 .cmp-opt-list {
     background: #1c2128; border: solid #444c56;
     height: 7; color: #e6edf3; margin-top: 1;
+    overflow-y: auto;
 }
 
 /* Status label inside each compare col */
@@ -202,15 +208,22 @@ ModalScreen { align: center middle; }
 }
 #btn-cmp-stop-b:hover { background: #f85149; }
 
-/* Chart boxes inside compare cols */
-.cmp-chart-box-a { background: #161b22; border: solid #f78166; padding: 1; height: 18; margin-top: 1; }
-.cmp-chart-box-b { background: #161b22; border: solid #3fb950; padding: 1; height: 18; margin-top: 1; }
-.cmp-chart-a { color: #f78166; }
-.cmp-chart-b { color: #3fb950; }
+/* FIX 3: Added overflow: hidden to the box, and forced inner charts to fit inside with 1fr */
+.cmp-chart-box-a { background: #161b22; border: solid #f78166; padding: 1; height: 18; margin-top: 1; overflow: hidden; }
+.cmp-chart-box-b { background: #161b22; border: solid #3fb950; padding: 1; height: 18; margin-top: 1; overflow: hidden; }
+.cmp-chart-a { color: #f78166; width: 1fr; height: 1fr; }
+.cmp-chart-b { color: #3fb950; width: 1fr; height: 1fr; }
 
 /* Diff table */
-#cmp-diff-section { margin-top: 1; }
-#cmp-diff-table { background: #0d1117; border: solid #d2a8ff; height: auto; max-height: 14; margin-top: 1; }
+#cmp-diff-section { margin-top: 1; height: auto; }
+
+/* FIX 4: Replaced auto/max-height with an explicit fixed height so the DataTable handles its own internal scroll */
+#cmp-diff-table { 
+    background: #0d1117; border: solid #d2a8ff; 
+    height: 14; 
+    margin-top: 1; 
+    overflow-y: auto; 
+}
 #cmp-diff-table > .datatable--header { background: #161b22; color: #d2a8ff; text-style: bold; }
 #cmp-diff-table > .datatable--cursor { background: #1f6feb; color: #fff; }
 #cmp-diff-table > .datatable--even-row { background: #0d1117; color: #c9d1d9; }

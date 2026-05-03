@@ -100,8 +100,8 @@ OptionList > .option-list--option-highlighted { background: #1f6feb; color: #fff
 }
 
 /* ── Collector panel ── */
-#collector-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; }
-#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; }
+#collector-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; }
+#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; min-height: 8; }
 .collector-title { color: #f78166; text-style: bold; margin-bottom: 1; }
 .cmd-display {
     background: #0d1117; border: solid #30363d;
@@ -783,13 +783,10 @@ class LatencyDashboard(App):
                 # Priority Control
                 with Container(id="priority-panel"):
                     yield Label("Priority Control", classes="collector-title")
-                    with Horizontal():
-                        with Vertical():
-                            yield Label("Nice (-20 to 19):", classes="sb-label")
-                            yield Input(value="-5", id="inp-nice-val", classes="sb-input")
-                        with Vertical():
-                            yield Label("", classes="sb-label")
-                            yield Button("Apply Nice", id="btn-apply-nice", classes="sb-btn")
+                    with Horizontal(classes="cmp-btn-row"):
+                        yield Label("Nice (-20 to 19): ", classes="sb-label")
+                        yield Input(value="-5", id="inp-nice-val", classes="sb-input")
+                        yield Button("Apply Nice", id="btn-apply-nice", classes="sb-btn")
 
                 # Tabs
                 with TabbedContent():

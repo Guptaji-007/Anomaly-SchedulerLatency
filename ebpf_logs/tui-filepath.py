@@ -831,7 +831,7 @@ class LatencyDashboard(App):
                                 yield Label("Sample rate 1/N:", classes="sb-label")
                                 yield Input(value="1", id="cmp-inp-rate-a", classes="cmp-input")
 
-                                with Horizontal():
+                                with Horizontal(classes="cmp-btn-row"):
                                     yield Button("Start A", id="btn-cmp-start-a")
                                     yield Button("Stop A",  id="btn-cmp-stop-a")
                                 yield Label("Collector A: stopped",
@@ -869,7 +869,7 @@ class LatencyDashboard(App):
                                 yield Label("Sample rate 1/N:", classes="sb-label")
                                 yield Input(value="1", id="cmp-inp-rate-b", classes="cmp-input")
 
-                                with Horizontal():
+                                with Horizontal(classes="cmp-btn-row"):
                                     yield Button("Start B", id="btn-cmp-start-b")
                                     yield Button("Stop B",  id="btn-cmp-stop-b")
                                 yield Label("Collector B: stopped",

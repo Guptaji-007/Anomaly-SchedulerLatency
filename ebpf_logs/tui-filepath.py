@@ -101,6 +101,7 @@ OptionList > .option-list--option-highlighted { background: #1f6feb; color: #fff
 
 /* ── Collector panel ── */
 #collector-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; }
+#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; }
 .collector-title { color: #f78166; text-style: bold; margin-bottom: 1; }
 .cmd-display {
     background: #0d1117; border: solid #30363d;
@@ -779,6 +780,17 @@ class LatencyDashboard(App):
                     yield Label("No collector running.", id="lbl-collector-status",
                                 classes="status-stopped")
 
+                # Priority Control
+                with Container(id="priority-panel"):
+                    yield Label("Priority Control", classes="collector-title")
+                    with Horizontal():
+                        with Vertical():
+                            yield Label("Nice (-20 to 19):", classes="sb-label")
+                            yield Input(value="-5", id="inp-nice-val", classes="sb-input")
+                        with Vertical():
+                            yield Label("", classes="sb-label")
+                            yield Button("Apply Nice", id="btn-apply-nice", classes="sb-btn")
+
                 # Tabs
                 with TabbedContent():
                     with TabPane("Summary", id="tab-summary"):
@@ -1428,6 +1440,31 @@ class LatencyDashboard(App):
         msg = self._slot_main.stop()
         self._refresh_all_collector_status()
         self.push_screen(InfoModal("Collector", msg))
+
+    # ── priority change ────────────────────────────────────────────────────────
+    @on(Button.Pressed, "#btn-apply-nice")
+    def _on_apply_nice(self) -> None:
+        if self._selected_pid is None:
+            self.push_screen(InfoModal("No Process", "Select a process first."))
+            return
+        
+        try:
+            nice_val = int(self.query_one("#inp-nice-val", Input).value)
+        except ValueError:
+            self.push_screen(InfoModal("Invalid Value", "Please enter a valid integer for nice."))
+            return
+            
+        pid = self._selected_pid
+        try:
+            if psutil is not None:
+                p = psutil.Process(pid)
+                p.nice(nice_val)
+            else:
+                os.system(f"renice -n {nice_val} -p {pid}")
+            self.push_screen(InfoModal("Priority Changed", f"Process {pid} nice value set to {nice_val}."))
+            self._do_refresh()
+        except Exception as e:
+            self.push_screen(InfoModal("Error", f"Failed to change nice value: {e}"))
 
     # ── param change listeners ─────────────────────────────────────────────────
     @on(Input.Changed,    "#inp-min-lat")

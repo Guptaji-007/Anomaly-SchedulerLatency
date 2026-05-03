@@ -141,27 +141,55 @@ ModalScreen { align: center middle; }
 /* ════════════════════════════════════════════
    COMPARE TAB
    ════════════════════════════════════════════ */
-#cmp-header { background: #161b22; border: solid #21262d; padding: 1; margin-bottom: 1; }
-.cmp-section-title { color: #d2a8ff; text-style: bold; margin-bottom: 1; }
 
-/* Two-column grid fills the tab horizontally */
-#cmp-grid { height: auto; }
+#cmp-header { 
+    background: #161b22; 
+    border: solid #21262d; 
+    padding: 1; 
+    margin-bottom: 1; 
+}
 
-/* Each column is scrollable so long charts don't get cut off */
+.cmp-section-title { 
+    color: #d2a8ff; 
+    text-style: bold; 
+    margin-bottom: 1; 
+}
+
+/* Base label styling for the new sb-label class */
+.sb-label {
+    color: #c9d1d9;
+    margin-top: 1;
+}
+
+/* Give grid a bounded height (1fr) so child columns share the available vertical space */
+#cmp-grid { 
+    height: 1fr; 
+    min-height: 20; 
+}
+
+/* 
+  Since these are now ScrollableContainers, they just need 
+  height: 1fr to fill the grid space. Textual handles the scroll natively. 
+*/
 .cmp-col-a {
-    width: 1fr; margin-right: 1;
-    background: #0d1117; border: solid #f78166;
-    padding: 1; height: auto;
+    width: 1fr; 
+    margin-right: 1;
+    background: #0d1117; 
+    border: solid #f78166;
+    padding: 1; 
+    height: 1fr; 
 }
 .cmp-col-b {
     width: 1fr;
-    background: #0d1117; border: solid #3fb950;
-    padding: 1; height: auto;
+    background: #0d1117; 
+    border: solid #3fb950;
+    padding: 1; 
+    height: 1fr; 
 }
+
 .cmp-head-a { color: #f78166; text-style: bold; text-align: center; margin-bottom: 1; }
 .cmp-head-b { color: #3fb950; text-style: bold; text-align: center; margin-bottom: 1; }
 
-/* Inputs INSIDE compare cols — explicit bright colours so they are always visible */
 .cmp-input {
     background: #1c2128;
     border: solid #58a6ff;
@@ -170,47 +198,64 @@ ModalScreen { align: center middle; }
 }
 .cmp-input:focus { border: solid #e3b341; }
 
-/* OptionList inside compare cols */
 .cmp-opt-list {
-    background: #1c2128; border: solid #444c56;
-    height: 7; color: #e6edf3; margin-top: 1;
+    background: #1c2128; 
+    border: solid #444c56;
+    height: 7; 
+    color: #e6edf3; 
+    margin-top: 1;
 }
 
-/* Status label inside each compare col */
 .cmp-status-a { color: #f78166; margin-top: 1; }
 .cmp-status-b { color: #3fb950; margin-top: 1; }
 
-/* Start / stop buttons per column */
-#btn-cmp-start-a {
-    background: #1a7f37; color: #fff; border: solid #2ea043;
-    width: 1fr; margin-right: 1; margin-top: 1;
+#btn-cmp-start-a, #btn-cmp-start-b {
+    background: #1a7f37; 
+    color: #fff; 
+    border: solid #2ea043;
+    width: 1fr; 
+    margin-right: 1; 
+    margin-top: 1;
 }
-#btn-cmp-start-a:hover { background: #2ea043; }
-#btn-cmp-stop-a {
-    background: #6e1c1c; color: #fff; border: solid #f85149;
-    width: 1fr; margin-top: 1;
-}
-#btn-cmp-stop-a:hover { background: #f85149; }
-#btn-cmp-start-b {
-    background: #1a7f37; color: #fff; border: solid #2ea043;
-    width: 1fr; margin-right: 1; margin-top: 1;
-}
-#btn-cmp-start-b:hover { background: #2ea043; }
-#btn-cmp-stop-b {
-    background: #6e1c1c; color: #fff; border: solid #f85149;
-    width: 1fr; margin-top: 1;
-}
-#btn-cmp-stop-b:hover { background: #f85149; }
 
-/* Chart boxes inside compare cols */
-.cmp-chart-box-a { background: #161b22; border: solid #f78166; padding: 1; height: 18; margin-top: 1; }
-.cmp-chart-box-b { background: #161b22; border: solid #3fb950; padding: 1; height: 18; margin-top: 1; }
-.cmp-chart-a { color: #f78166; }
-.cmp-chart-b { color: #3fb950; }
+/* Fix for the Horizontal container collapsing to 0 height inside ScrollableContainers */
+.cmp-btn-row {
+    height: auto;
+    min-height: 5; /* Ensures enough room for the standard Button height + margins */
+}
 
-/* Diff table */
-#cmp-diff-section { margin-top: 1; }
-#cmp-diff-table { background: #0d1117; border: solid #d2a8ff; height: auto; max-height: 14; margin-top: 1; }
+#btn-cmp-start-a:hover, #btn-cmp-start-b:hover { background: #2ea043; }
+
+#btn-cmp-stop-a, #btn-cmp-stop-b {
+    background: #6e1c1c; 
+    color: #fff; 
+    border: solid #f85149;
+    width: 1fr; 
+    margin-top: 1;
+}
+#btn-cmp-stop-a:hover, #btn-cmp-stop-b:hover { background: #f85149; }
+
+/* Keep strict bounds and hidden overflow on the boxes to stop the chart bleeding */
+.cmp-chart-box-a { background: #161b22; border: solid #f78166; padding: 1; height: 18; margin-top: 1; overflow: hidden; }
+.cmp-chart-box-b { background: #161b22; border: solid #3fb950; padding: 1; height: 18; margin-top: 1; overflow: hidden; }
+
+/* Force internal charts to strictly map to the bounded box */
+.cmp-chart-a { color: #f78166; width: 1fr; height: 1fr; }
+.cmp-chart-b { color: #3fb950; width: 1fr; height: 1fr; }
+
+/* Diff table section */
+#cmp-diff-section { 
+    margin-top: 1; 
+    height: auto; 
+}
+
+/* Explicit bounded height so the DataTable can calculate internal scrolling */
+#cmp-diff-table { 
+    background: #0d1117; 
+    border: solid #d2a8ff; 
+    height: 15; 
+    margin-top: 1; 
+}
 #cmp-diff-table > .datatable--header { background: #161b22; color: #d2a8ff; text-style: bold; }
 #cmp-diff-table > .datatable--cursor { background: #1f6feb; color: #fff; }
 #cmp-diff-table > .datatable--even-row { background: #0d1117; color: #c9d1d9; }
@@ -418,7 +463,8 @@ def sparkline_axes(values: list[float], width: int = 55, height: int = 10) -> st
     rows: list[str] = []
     for r in range(height):
         thr  = 1.0 - (r / max(height - 1, 1))
-        bars = "".join("*" if v >= thr else " " for v in norm)
+        bars = "".join("█" if v >= thr else " " for v in norm)
+        #bars = "".join("." if v >= thr else " " for v in norm)
         if r == 0:
             yl = f"{hi:7.1f}"
         elif r == height // 2:
@@ -793,7 +839,7 @@ class LatencyDashboard(App):
                                 yield Label("Sample rate 1/N:", classes="sb-label")
                                 yield Input(value="1", id="cmp-inp-rate-a", classes="cmp-input")
 
-                                with Horizontal():
+                                with Horizontal(classes="cmp-btn-row"):
                                     yield Button("Start A", id="btn-cmp-start-a")
                                     yield Button("Stop A",  id="btn-cmp-stop-a")
                                 yield Label("Collector A: stopped",
@@ -831,7 +877,7 @@ class LatencyDashboard(App):
                                 yield Label("Sample rate 1/N:", classes="sb-label")
                                 yield Input(value="1", id="cmp-inp-rate-b", classes="cmp-input")
 
-                                with Horizontal():
+                                with Horizontal(classes="cmp-btn-row"):
                                     yield Button("Start B", id="btn-cmp-start-b")
                                     yield Button("Stop B",  id="btn-cmp-stop-b")
                                 yield Label("Collector B: stopped",

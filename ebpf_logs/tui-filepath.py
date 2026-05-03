@@ -217,6 +217,13 @@ ModalScreen { align: center middle; }
     margin-right: 1; 
     margin-top: 1;
 }
+
+/* Fix for the Horizontal container collapsing to 0 height inside ScrollableContainers */
+.cmp-btn-row {
+    height: auto;
+    min-height: 5; /* Ensures enough room for the standard Button height + margins */
+}
+
 #btn-cmp-start-a:hover, #btn-cmp-start-b:hover { background: #2ea043; }
 
 #btn-cmp-stop-a, #btn-cmp-stop-b {

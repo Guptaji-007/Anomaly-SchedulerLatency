@@ -134,8 +134,8 @@ DataTable > .datatable--even-row { background: #0d1117; color: #c9d1d9; }
 DataTable > .datatable--odd-row  { background: #111820; color: #c9d1d9; }
 
 /* ── Chart boxes ── */
-.chart-box { background: #161b22; border: solid #21262d; padding: 1; height: 16; margin-top: 1; }
-.chart-box Static { color: #3fb950; }
+.chart-box { background: #161b22; border: solid #21262d; padding: 1; height: 16; margin-top: 1; overflow-x: auto; }
+.chart-box Static { color: #3fb950; width: auto; }
 
 /* ── Tabs / Log ── */
 TabbedContent { margin-top: 1; }
@@ -405,12 +405,13 @@ def load_ebpf_events(path: str, max_rows: int = 30000) -> pd.DataFrame:
 
 def summarize_latency(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
-        return pd.DataFrame(columns=["tgid","comm","events","avg_us",
+        return pd.DataFrame(columns=["tgid","comm","events","min_us","avg_us",
                                      "p50_us","p95_us","p99_us","max_us"])
     rows = []
     for (tgid, comm), grp in df.groupby(["tgid","comm"], dropna=False):
         lat = grp["latency_us"].to_numpy(dtype=float)
         rows.append({"tgid": int(tgid), "comm": str(comm), "events": len(lat),
+                     "min_us": float(np.min(lat)),
                      "avg_us": float(np.mean(lat)), "p50_us": float(np.percentile(lat, 50)),
                      "p95_us": float(np.percentile(lat, 95)),
                      "p99_us": float(np.percentile(lat, 99)),
@@ -507,13 +508,19 @@ def spike_markers(values: list[float], width: int = 55) -> str:
 def ascii_timeline(lat: np.ndarray, height: int = 8, width: int = 55) -> str:
     if lat.size == 0:
         return "(no data)"
-    mn, mx  = lat.min(), lat.max()
-    span    = (mx - mn) or 1
+    
+    # Use percentiles to filter out extreme spikes so normal variations are visible
+    mn = float(np.percentile(lat, 5))
+    mx = float(np.percentile(lat, 95))
+    if mx <= mn:
+        mn, mx = float(lat.min()), float(lat.max())
+        
+    span = (mx - mn) or 1.0
     sampled = lat[::max(1, len(lat) // width)][-width:]
     rows = []
     for r in range(height - 1, -1, -1):
         thr  = mn + (r / max(height - 1, 1)) * span
-        line = "".join("." if v >= thr else " " for v in sampled)
+        line = "".join("█" if v >= thr else " " for v in sampled)
         rows.append(f"{thr:>10.1f} |{line}")
     rows.append(" " * 11 + "+" + "-" * len(sampled))
     return "\n".join(rows)
@@ -1049,6 +1056,13 @@ class LatencyDashboard(App):
                             yield DataTable(id="cmp-diff-table", zebra_stripes=True,
                                             cursor_type="row")
 
+                    with TabPane("Latency Analysis", id="tab-analysis"):
+                        yield Label("Aggregated Session Analysis (Filtered by Selected Process)", classes="section-title")
+                        yield DataTable(id="tbl-analysis", zebra_stripes=True, cursor_type="row")
+                        yield Label("Overall Latency Trend", classes="section-title")
+                        with Container(classes="chart-box"):
+                            yield Static("(no data)", id="chart-analysis-trend")
+
                     with TabPane("Collector Log", id="tab-log"):
                         yield Label("Collector Log", classes="section-title")
                         yield Log(id="collector-log", highlight=True)
@@ -1077,6 +1091,9 @@ class LatencyDashboard(App):
         e.add_columns("timestamp_ns","ts_s","tgid","pid","comm","cpu","prio","latency us","label")
         c = self.query_one("#cmp-diff-table", DataTable)
         c.add_columns("Metric","Process A","Process B","Diff A-B","Winner")
+        
+        a = self.query_one("#tbl-analysis", DataTable)
+        a.add_columns("TGID", "comm", "Events", "Min (us)", "Max (us)", "Avg (us)", "P50", "P95", "P99")
 
     # ── full refresh ───────────────────────────────────────────────────────────
     def _do_refresh(self) -> None:
@@ -1086,6 +1103,7 @@ class LatencyDashboard(App):
         self._refresh_proc_list()
         self._refresh_cmp_option_lists()
         self._refresh_analysis()
+        self._refresh_analysis_tab()
         self._refresh_cmp_charts()
         self._refresh_cmd_preview()
         self._refresh_all_collector_status()
@@ -1189,6 +1207,63 @@ class LatencyDashboard(App):
                         "Y" if row.tgid in running_pids else "N",
                         status_map.get(row.tgid, "-"))
 
+    # ── analysis tab ───────────────────────────────────────────────────────────
+    def _refresh_analysis_tab(self) -> None:
+        try:
+            tbl = self.query_one("#tbl-analysis", DataTable)
+            trend = self.query_one("#chart-analysis-trend", Static)
+        except NoMatches:
+            return
+
+        tbl.clear()
+        
+        if self._selected_pid is None:
+            trend.update("No process selected. Please select a process first.")
+            return
+
+        path = self._events_path()
+        if not os.path.exists(path):
+            trend.update(f"Events file not found.")
+            return
+            
+        try:
+            df = pd.read_csv(path)
+            if "tgid" not in df.columns or "latency_us" not in df.columns:
+                trend.update("Invalid CSV format.")
+                return
+                
+            df["tgid"] = pd.to_numeric(df["tgid"], errors="coerce")
+            df["latency_us"] = pd.to_numeric(df["latency_us"], errors="coerce")
+            df = df.dropna(subset=["tgid", "latency_us"])
+            df["tgid"] = df["tgid"].astype("int32")
+            
+            df = df[df["tgid"] == self._selected_pid]
+        except Exception as e:
+            trend.update(f"Error reading CSV: {e}")
+            return
+
+        if df.empty:
+            trend.update(f"No events found for PID {self._selected_pid} in {path}.")
+            return
+
+        lat = df["latency_us"].to_numpy(dtype=float)
+        comm = str(df["comm"].iloc[-1]) if "comm" in df.columns else "-"
+
+        tbl.add_row(
+            str(self._selected_pid),
+            comm,
+            str(len(lat)),
+            f"{float(np.min(lat)):.1f}",
+            f"{float(np.max(lat)):.1f}",
+            f"{float(np.mean(lat)):.1f}",
+            f"{float(np.percentile(lat, 50)):.1f}",
+            f"{float(np.percentile(lat, 95)):.1f}",
+            f"{float(np.percentile(lat, 99)):.1f}"
+        )
+
+        trend_str = ascii_timeline(lat, height=12, width=150)
+        trend.update(trend_str)
+            
     # ── main process picker ────────────────────────────────────────────────────
     def _refresh_proc_list(self, ft: str = "") -> None:
         ol = self.query_one("#proc-option-list", OptionList)
@@ -1234,6 +1309,7 @@ class LatencyDashboard(App):
                 pass
         self._refresh_cmd_preview()
         self._refresh_analysis()
+        self._refresh_analysis_tab()
         self._refresh_priority_display()
 
     @on(Button.Pressed, "#btn-apply-pid")
@@ -1912,3 +1988,4 @@ class LatencyDashboard(App):
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     LatencyDashboard().run()
+

@@ -101,7 +101,6 @@ OptionList > .option-list--option-highlighted { background: #1f6feb; color: #fff
 
 /* ── Collector panel ── */
 #collector-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; }
-#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; min-height: 9; }
 .collector-title { color: #f78166; text-style: bold; margin-bottom: 1; }
 .cmd-display {
     background: #0d1117; border: solid #30363d;
@@ -113,8 +112,22 @@ OptionList > .option-list--option-highlighted { background: #1f6feb; color: #fff
 #btn-stop:hover  { background: #f85149; }
 #lbl-collector-status { margin-top: 1; }
 
+/* ── Priority panel specifics ── */
+#priority-panel { background: #161b22; border: solid #21262d; padding: 1; margin-top: 1; height: auto; min-height: 12; }
+#nice-control-row { height: auto; min-height: 5; margin-top: 1; margin-bottom: 1; }
+#nice-control-row > Vertical { height: auto; width: 1fr; }
+#btn-apply-nice { margin-top: 2; margin-left: 1; height: 3; width: auto; }
+#lbl-nice-result {
+    color: #e3b341; margin-top: 1; text-style: bold;
+}
+#lbl-nice-result.nice-ok   { color: #3fb950; }
+#lbl-nice-result.nice-err  { color: #f85149; }
+#lbl-nice-verify { color: #8b949e; margin-top: 0; }
+
 /* ── Tables ── */
 DataTable { background: #0d1117; border: solid #21262d; height: auto; max-height: 18; }
+.table-main { max-height: 12; }
+.table-history { max-height: 10; margin-top: 1; border: solid #58a6ff; }
 DataTable > .datatable--header { background: #161b22; color: #58a6ff; text-style: bold; }
 DataTable > .datatable--cursor { background: #1f6feb; color: #fff; }
 DataTable > .datatable--even-row { background: #0d1117; color: #c9d1d9; }
@@ -465,7 +478,6 @@ def sparkline_axes(values: list[float], width: int = 55, height: int = 10) -> st
     for r in range(height):
         thr  = 1.0 - (r / max(height - 1, 1))
         bars = "".join("█" if v >= thr else " " for v in norm)
-        #bars = "".join("." if v >= thr else " " for v in norm)
         if r == 0:
             yl = f"{hi:7.1f}"
         elif r == height // 2:
@@ -533,6 +545,112 @@ def ascii_bar(keys: list, values: list, bar_width: int = 36, title: str = "") ->
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Priority helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def get_process_nice(pid: int) -> Optional[int]:
+    """Return the current nice value of a process, or None on error."""
+    try:
+        if psutil is not None:
+            return psutil.Process(pid).nice()
+        result = subprocess.run(
+            ["ps", "-o", "nice=", "-p", str(pid)],
+            capture_output=True, text=True, timeout=3,
+        )
+        txt = result.stdout.strip()
+        return int(txt) if txt else None
+    except Exception:
+        return None
+
+
+def set_process_nice(pid: int, nice_val: int) -> tuple[bool, str]:
+    """
+    Set the nice value of a running process.
+
+    Returns (success, message).
+
+    Strategy:
+      1. Try psutil  (works when we own the process or are root)
+      2. Fall back to `renice` subprocess (works the same way but lets
+         the OS enforce permissions more visibly)
+      3. If both fail with EPERM, advise the user to run as root or use
+         `sudo renice` manually.
+    """
+    if nice_val < -20 or nice_val > 19:
+        return False, f"Nice value must be between -20 and 19 (got {nice_val})."
+
+    if not is_pid_alive(pid):
+        return False, f"PID {pid} is not alive."
+
+    # ── attempt 1: psutil ────────────────────────────────────────────────────
+    if psutil is not None:
+        try:
+            proc = psutil.Process(pid)
+            old  = proc.nice()
+            proc.nice(nice_val)
+            verified = proc.nice()
+            if verified == nice_val:
+                return True, (
+                    f"Nice updated via psutil.\n"
+                    f"  PID:  {pid}\n"
+                    f"  old nice = {old}  →  new nice = {verified}"
+                )
+            # Set appeared to succeed but value didn't stick — unusual
+            return False, (
+                f"psutil.nice() returned without error but value did not stick "
+                f"(read back {verified} instead of {nice_val})."
+            )
+        except psutil.AccessDenied:
+            pass        # fall through to renice
+        except psutil.NoSuchProcess:
+            return False, f"PID {pid} disappeared before we could renice it."
+        except Exception as exc:
+            pass        # fall through to renice
+
+    # ── attempt 2: renice subprocess ────────────────────────────────────────
+    try:
+        result = subprocess.run(
+            ["renice", "-n", str(nice_val), "-p", str(pid)],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            # Verify by reading back
+            actual = get_process_nice(pid)
+            if actual == nice_val:
+                return True, (
+                    f"Nice updated via renice.\n"
+                    f"  PID:     {pid}\n"
+                    f"  new nice = {actual}\n"
+                    f"  renice output: {result.stdout.strip()}"
+                )
+            return True, (
+                f"renice exited 0 but read-back shows nice={actual} "
+                f"(requested {nice_val}). The kernel may have clamped it.\n"
+                f"  renice output: {result.stdout.strip()}"
+            )
+        # renice failed
+        stderr = (result.stderr or "").strip()
+        if "Operation not permitted" in stderr or "permission denied" in stderr.lower():
+            return False, (
+                f"Permission denied setting nice={nice_val} for PID {pid}.\n\n"
+                "To lower the nice value (raise priority) you need root.\n"
+                "Fix options:\n"
+                "  • Run the dashboard with:  sudo python tui_dashboard.py\n"
+                f"  • Or manually:             sudo renice -n {nice_val} -p {pid}"
+            )
+        return False, f"renice failed (exit {result.returncode}):\n{stderr}"
+    except FileNotFoundError:
+        return False, (
+            "renice binary not found. Install procps or util-linux,\n"
+            "or run as root so psutil can set the priority directly."
+        )
+    except subprocess.TimeoutExpired:
+        return False, "renice timed out."
+    except Exception as exc:
+        return False, f"Unexpected error calling renice: {exc}"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # CollectorSlot  —  manages ONE child collector process
 # ──────────────────────────────────────────────────────────────────────────────
 class CollectorSlot:
@@ -569,7 +687,6 @@ class CollectorSlot:
                 f"Collector binary not found:\n  {COLLECTOR_BIN}\n\n"
                 "Build it first with 'make'."
             )
-        # Ensure output directory exists
         out_dir = os.path.join(BASE_DIR, "ebpf_logs")
         os.makedirs(out_dir, exist_ok=True)
 
@@ -679,27 +796,31 @@ class LatencyDashboard(App):
 
     def __init__(self):
         super().__init__()
-        # ── Collector slots — INSTANCE variables, not class variables ──────────
-        self._slot_main  = CollectorSlot()   # main tab
-        self._slot_cmp_a = CollectorSlot()   # compare column A
-        self._slot_cmp_b = CollectorSlot()   # compare column B
+        self._slot_main  = CollectorSlot()
+        self._slot_cmp_a = CollectorSlot()
+        self._slot_cmp_b = CollectorSlot()
 
-        # ── Selection state ────────────────────────────────────────────────────
         self._selected_pid: Optional[int] = None
         self._cmp_pid_a:    Optional[int] = None
         self._cmp_pid_b:    Optional[int] = None
 
-        # ── Data frames ────────────────────────────────────────────────────────
         self._events_df_main:  pd.DataFrame = pd.DataFrame()
         self._events_df_cmp_a: pd.DataFrame = pd.DataFrame()
         self._events_df_cmp_b: pd.DataFrame = pd.DataFrame()
         self._summary_df:       pd.DataFrame = pd.DataFrame()
         self._running_df:       pd.DataFrame = pd.DataFrame()
 
-        # ── Refresh settings ───────────────────────────────────────────────────
-        self._auto_refresh: bool          = True
-        self._refresh_secs: int           = 5
+        self._auto_refresh: bool            = True
+        self._refresh_secs: int             = 5
         self._timer:        Optional[Timer] = None
+
+        # Track the nice value at the moment we applied it so the
+        # analysis panel can annotate "priority changed at T=..."
+        self._nice_changed_at_ts: Optional[float] = None
+        self._nice_applied_val:   Optional[int]   = None
+        
+        # Track statistics from the previous execution before a nice value change
+        self._prev_stats: dict[int, dict] = {}
 
     # ── compose ────────────────────────────────────────────────────────────────
     def compose(self) -> ComposeResult:
@@ -780,20 +901,36 @@ class LatencyDashboard(App):
                     yield Label("No collector running.", id="lbl-collector-status",
                                 classes="status-stopped")
 
-                # Priority Control
+                # ── Priority Control ─────────────────────────────────────────
                 with Container(id="priority-panel"):
-                    yield Label("Priority Control", classes="collector-title")
-                    yield Label("Current Nice: (select a process)", id="lbl-current-nice", classes="sb-label")
-                    with Horizontal(classes="cmp-btn-row"):
-                        yield Label("Nice (-20 to 19): ", classes="sb-label")
-                        yield Input(value="-5", id="inp-nice-val", classes="sb-input")
+                    yield Label("Priority Control (renice)", classes="collector-title")
+
+                    # Row 1: current nice readout
+                    yield Label("Current Nice: (select a process)",
+                                id="lbl-current-nice", classes="sb-label")
+
+                    # Row 2: input + apply button side-by-side
+                    with Horizontal(id="nice-control-row"):
+                        with Vertical():
+                            yield Label("Target nice (-20 highest → 19 lowest):",
+                                        classes="sb-label")
+                            yield Input(value="0", id="inp-nice-val", classes="sb-input",
+                                        placeholder="-20 to 19")
                         yield Button("Apply Nice", id="btn-apply-nice", classes="sb-btn")
+
+                    # Row 3: result feedback
+                    yield Label("", id="lbl-nice-result")
+                    # Row 4: verified read-back
+                    yield Label("", id="lbl-nice-verify")
 
                 # Tabs
                 with TabbedContent():
                     with TabPane("Summary", id="tab-summary"):
                         yield Label("Top Processes by P99 Latency", classes="section-title")
-                        yield DataTable(id="tbl-summary", zebra_stripes=True, cursor_type="row")
+                        yield DataTable(id="tbl-summary", zebra_stripes=True, cursor_type="row", classes="table-main")
+                        
+                        yield Label("Previous Priorities History", classes="section-title", id="lbl-prev-stats-title")
+                        yield DataTable(id="tbl-prev-stats", zebra_stripes=True, cursor_type="row", classes="table-history")
 
                     with TabPane("Timeline", id="tab-timeline"):
                         yield Label("Latency Timeline", classes="section-title")
@@ -932,6 +1069,10 @@ class LatencyDashboard(App):
         t = self.query_one("#tbl-summary", DataTable)
         t.add_columns("TGID","comm","events","avg us","p50 us","p95 us","p99 us","max us",
                       "running","status")
+        
+        p = self.query_one("#tbl-prev-stats", DataTable)
+        p.add_columns("PID", "comm", "old nice", "new nice", "events", "avg us", "p95 us", "p99 us", "max us", "timestamp")
+
         e = self.query_one("#tbl-events", DataTable)
         e.add_columns("timestamp_ns","ts_s","tgid","pid","comm","cpu","prio","latency us","label")
         c = self.query_one("#cmp-diff-table", DataTable)
@@ -990,7 +1131,6 @@ class LatencyDashboard(App):
                 ~self._summary_df.apply(
                     lambda r: is_system_process(int(r["tgid"]), str(r["comm"])), axis=1)
             ].reset_index(drop=True)
-        # Update alive state from OS
         for slot in (self._slot_main, self._slot_cmp_a, self._slot_cmp_b):
             if slot.pid and not is_pid_alive(slot.pid):
                 slot.pid = 0
@@ -1015,6 +1155,27 @@ class LatencyDashboard(App):
     def _refresh_summary_table(self) -> None:
         tbl = self.query_one("#tbl-summary", DataTable)
         tbl.clear()
+        
+        # Also refresh previous stats table
+        prev_tbl = self.query_one("#tbl-prev-stats", DataTable)
+        prev_tbl.clear()
+        
+        # Fill previous stats history
+        for pid, stats in sorted(self._prev_stats.items(), key=lambda x: x[1].get('ts', 0), reverse=True):
+            ts_str = time.strftime('%H:%M:%S', time.localtime(stats.get('ts', 0)))
+            prev_tbl.add_row(
+                str(pid),
+                stats.get('comm', '-'),
+                str(stats.get('old_nice', '-')),
+                str(stats.get('new_nice', '-')),
+                str(stats.get('events', 0)),
+                f"{stats.get('avg_us', 0):.1f}",
+                f"{stats.get('p95_us', 0):.1f}",
+                f"{stats.get('p99_us', 0):.1f}",
+                f"{stats.get('max_us', 0):.1f}",
+                ts_str
+            )
+
         if self._summary_df.empty:
             return
         running_pids = (set(self._running_df["pid"].tolist())
@@ -1055,11 +1216,22 @@ class LatencyDashboard(App):
 
     def _set_selected_pid(self, pid: int) -> None:
         self._selected_pid = pid
+        # Clear previous nice-change markers when switching process
+        self._nice_changed_at_ts = None
+        self._nice_applied_val   = None
         try:
             self.query_one("#selected-pid-display", Label).update(
                 f"PID {pid}  -  {self._name_of(pid)}")
         except NoMatches:
             pass
+        # Clear stale nice-result labels
+        for lbl_id in ("#lbl-nice-result", "#lbl-nice-verify"):
+            try:
+                lbl = self.query_one(lbl_id, Label)
+                lbl.update("")
+                lbl.remove_class("nice-ok", "nice-err")
+            except NoMatches:
+                pass
         self._refresh_cmd_preview()
         self._refresh_analysis()
         self._refresh_priority_display()
@@ -1138,6 +1310,166 @@ class LatencyDashboard(App):
             self.query_one(lbl_id, Label).update(f"PID {pid}  -  {self._name_of(pid)}")
         except NoMatches:
             pass
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # ── PRIORITY: Apply Nice button handler ───────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    @on(Button.Pressed, "#btn-apply-nice")
+    def _on_apply_nice(self) -> None:
+        """
+        Read the nice value from the input, apply it to the selected PID,
+        verify the change by reading back from the OS, update the UI labels,
+        and trigger a data+chart refresh so the latency analysis reflects
+        any change in scheduling behaviour immediately.
+        """
+        pid = self._selected_pid
+
+        # ── guard: no process selected ────────────────────────────────────────
+        if pid is None:
+            self.push_screen(InfoModal(
+                "No Process Selected",
+                "Select a process from the picker first, then press Apply Nice.",
+            ))
+            return
+
+        # ── guard: validate nice input ────────────────────────────────────────
+        try:
+            inp_widget = self.query_one("#inp-nice-val", Input)
+            nice_raw   = inp_widget.value.strip()
+            if not nice_raw:
+                raise ValueError("empty")
+            nice_val = int(nice_raw)
+        except (NoMatches, ValueError):
+            self.push_screen(InfoModal(
+                "Invalid Nice Value",
+                "Enter an integer between -20 (highest priority) and 19 (lowest priority).",
+            ))
+            return
+
+        if not (-20 <= nice_val <= 19):
+            self.push_screen(InfoModal(
+                "Out of Range",
+                f"Nice value must be -20 to 19.  You entered: {nice_val}",
+            ))
+            return
+
+        # ── guard: process still alive ────────────────────────────────────────
+        if not is_pid_alive(pid):
+            self.push_screen(InfoModal(
+                "Process Gone",
+                f"PID {pid} is no longer running.",
+            ))
+            return
+
+        # ── record the old nice value before we change it ─────────────────────
+        old_nice = get_process_nice(pid)
+
+        # ── apply ─────────────────────────────────────────────────────────────
+        ok, msg = set_process_nice(pid, nice_val)
+
+        if ok:
+            # Capture stats from current summary dataframe before clearing/restarting the collector
+            if not self._summary_df.empty:
+                current_pid_stats = self._summary_df[self._summary_df['tgid'] == pid]
+                if not current_pid_stats.empty:
+                    row = current_pid_stats.iloc[0]
+                    self._prev_stats[pid] = {
+                        'comm': str(row['comm']),
+                        'events': int(row['events']),
+                        'avg_us': float(row['avg_us']),
+                        'p50_us': float(row['p50_us']),
+                        'p95_us': float(row['p95_us']),
+                        'p99_us': float(row['p99_us']),
+                        'max_us': float(row['max_us']),
+                        'old_nice': old_nice,
+                        'new_nice': nice_val,
+                        'ts': time.time()
+                    }
+                    
+            # If the process is currently being monitored by a collector, we should
+            # reset the CSV to cleanly split "before" and "after" priority metrics
+            slot = None
+            if self._slot_main.target_pid == pid:
+                slot = self._slot_main
+            
+            if slot and slot.alive:
+                # Stop it briefly, clear the file to separate new runs
+                # You can choose to completely restart or append.
+                # If we clear, the summary_df starts fresh for the new nice value
+                try:
+                    label = getattr(self.query_one("#sel-label", Select), "value", 0)
+                    min_lat = int(getattr(self.query_one("#inp-min-lat", Input), "value", "0"))
+                    rate = int(getattr(self.query_one("#inp-sample-rate", Input), "value", "1"))
+                    csv_path = slot.events_csv
+                    
+                    slot.stop()
+                    # overwrite to reset stats
+                    with open(csv_path, "w") as f:
+                        f.write("timestamp_ns,pid,tgid,comm,cpu_id,priority,latency_us,label\n")
+                        
+                    slot.launch(label=label, target_pid=pid, min_us=min_lat, rate=rate, events_csv=csv_path)
+                except Exception:
+                    pass
+
+        # ── read back from OS to verify ───────────────────────────────────────
+        verified_nice = get_process_nice(pid)
+
+        # ── update inline labels ──────────────────────────────────────────────
+        try:
+            result_lbl  = self.query_one("#lbl-nice-result",  Label)
+            verify_lbl  = self.query_one("#lbl-nice-verify",  Label)
+            current_lbl = self.query_one("#lbl-current-nice", Label)
+
+            if ok:
+                result_lbl.update(
+                    f"✓ Nice applied: {old_nice} → {nice_val} for PID {pid} ({self._name_of(pid)})"
+                )
+                result_lbl.remove_class("nice-err")
+                result_lbl.add_class("nice-ok")
+
+                if verified_nice is not None:
+                    if verified_nice == nice_val:
+                        verify_lbl.update(f"  OS read-back confirmed: nice = {verified_nice}")
+                    else:
+                        # Kernel clamped it (e.g. non-root lowering below 0 may get clamped)
+                        verify_lbl.update(
+                            f"  OS read-back: nice = {verified_nice} "
+                            f"(kernel may have clamped {nice_val})"
+                        )
+                else:
+                    verify_lbl.update("  (could not read back nice from OS)")
+
+                # Update the "Current Nice" line too
+                current_lbl.update(
+                    f"Current OS Nice for PID {pid}: {verified_nice if verified_nice is not None else nice_val}"
+                )
+
+                # Record the wall-clock timestamp of the change so the
+                # timeline chart can annotate it
+                self._nice_changed_at_ts = time.time()
+                self._nice_applied_val   = verified_nice if verified_nice is not None else nice_val
+
+            else:
+                result_lbl.update(f"✗ Failed to apply nice={nice_val} for PID {pid}")
+                result_lbl.remove_class("nice-ok")
+                result_lbl.add_class("nice-err")
+                verify_lbl.update("")
+
+        except NoMatches:
+            pass
+
+        # ── always show the modal so the user sees the full detail ────────────
+        title = f"Priority {'Updated' if ok else 'Error'}  —  PID {pid}"
+        self.push_screen(InfoModal(title, msg))
+
+        # ── if successful, immediately refresh data + charts ──────────────────
+        if ok:
+            # Reload eBPF data and redraw analysis so the priority-distribution
+            # chart reflects the new scheduling class in subsequent events.
+            self._load_data()
+            self._refresh_analysis()
+            self._refresh_summary_table()
+            self._refresh_metrics()
 
     # ── compare collector buttons ─────────────────────────────────────────────
     @on(Button.Pressed, "#btn-cmp-start-a")
@@ -1301,22 +1633,76 @@ class LatencyDashboard(App):
         df  = df.sort_values("timestamp_s")
         lat = df["latency_us"].to_numpy(dtype=float)
 
-        tl = (f"PID {pid}  |  {len(lat):,} samples\n"
-              f"min={lat.min():.1f}  avg={np.mean(lat):.1f}  "
-              f"p99={np.percentile(lat,99):.1f}  max={lat.max():.1f}  (us)\n\n"
-              + sparkline_axes(lat.tolist(), width=60, height=10)
-              + f"\nSpikes (!=p95, ^=p99): {spike_markers(lat.tolist(), width=60)}\n\n"
-              + ascii_timeline(lat, height=8, width=60))
+        # ── Annotate timeline with nice-change marker if applicable ───────────
+        nice_marker_line = ""
+        if self._nice_changed_at_ts is not None and self._nice_applied_val is not None:
+            # Find what fraction of the timeline the nice change falls at
+            ts_arr = df["timestamp_s"].to_numpy(dtype=float)
+            if len(ts_arr) > 0:
+                t_first = ts_arr[0]
+                t_last  = ts_arr[-1]
+                t_span  = (t_last - t_first) or 1.0
+                # Convert the wall-clock change time to relative position
+                # (eBPF timestamps are kernel monotonic; we approximate with
+                #  the fraction of samples collected *after* we applied renice)
+                changed_ts = self._nice_changed_at_ts
+                # Count how many events are after the renice wall-clock time
+                # We use a simple heuristic: mark the tail boundary
+                after_count  = max(0, len(ts_arr) - 1)  # placeholder
+                width = 60
+                marker_pos = min(width - 1, int((changed_ts - t_first) / t_span * width))
+                marker_pos = max(0, marker_pos)
+                nice_marker_line = (
+                    f"\n  Renice applied ──► nice={self._nice_applied_val} "
+                    f"(watch priority distribution below for effect)\n"
+                    + " " * 9 + "|"
+                    + " " * marker_pos + "▲" + " " * max(0, width - marker_pos - 1)
+                )
+
+        tl = (
+            f"PID {pid}  |  {len(lat):,} samples\n"
+            f"min={lat.min():.1f}  avg={np.mean(lat):.1f}  "
+            f"p99={np.percentile(lat,99):.1f}  max={lat.max():.1f}  (us)\n"
+            + (f"nice={self._nice_applied_val}  " if self._nice_applied_val is not None else "")
+            + "\n"
+            + sparkline_axes(lat.tolist(), width=60, height=10)
+            + f"\nSpikes (!=p95, ^=p99): {spike_markers(lat.tolist(), width=60)}"
+            + nice_marker_line
+            + "\n\n"
+            + ascii_timeline(lat, height=8, width=60)
+        )
         self._set_static("#chart-timeline",  tl)
         self._set_static("#chart-histogram", ascii_histogram(lat, bins=20, bar_width=44))
+
         cpu = df["cpu_id"].value_counts().sort_index()
         self._set_static("#chart-cpu", ascii_bar(
             [f"CPU {k}" for k in cpu.index], cpu.values.tolist(),
             bar_width=40, title="Per-CPU events"))
+
+        # Priority distribution — most useful metric post-renice:
+        # kernel stores priority as 100+nice for normal tasks, so
+        # map back to nice for readability.
         prio = df["priority"].value_counts().sort_index()
-        self._set_static("#chart-prio", ascii_bar(
-            [f"Prio {k}" for k in prio.index], prio.values.tolist(),
-            bar_width=40, title="Priority distribution"))
+        prio_keys = []
+        for k in prio.index:
+            nice_equiv = int(k) - 120   # kernel sched priority → nice
+            if -20 <= nice_equiv <= 19:
+                prio_keys.append(f"nice {nice_equiv:+d} (prio {k})")
+            else:
+                prio_keys.append(f"prio {k}")
+
+        prio_note = ""
+        if self._nice_applied_val is not None:
+            prio_note = (
+                f"\n  Applied nice={self._nice_applied_val} "
+                f"(= kernel prio {self._nice_applied_val + 120})  "
+                f"— new events should appear in that bucket."
+            )
+
+        self._set_static("#chart-prio",
+            ascii_bar(prio_keys, prio.values.tolist(),
+                      bar_width=40,
+                      title=f"Priority distribution{prio_note}"))
 
         etbl = self.query_one("#tbl-events", DataTable)
         etbl.clear()
@@ -1326,6 +1712,7 @@ class LatencyDashboard(App):
                          str(row.cpu_id), str(row.priority),
                          f"{row.latency_us:.2f}", str(row.label))
 
+    # ── priority display (read-only refresh) ───────────────────────────────────
     def _refresh_priority_display(self) -> None:
         pid = self._selected_pid
         try:
@@ -1333,20 +1720,15 @@ class LatencyDashboard(App):
             if pid is None:
                 lbl.update("Current Nice: (select a process)")
                 return
-            if psutil is not None:
-                p = psutil.Process(pid)
-                n = p.nice()
+            n = get_process_nice(pid)
+            if n is not None:
+                lbl.update(f"Current OS Nice for PID {pid} ({self._name_of(pid)}): {n}")
             else:
-                result = subprocess.run(["ps", "-o", "nice=", "-p", str(pid)], capture_output=True, text=True)
-                n = int(result.stdout.strip())
-            lbl.update(f"Current OS Nice for PID {pid}: {n}")
-        except Exception:
-            try:
-                self.query_one("#lbl-current-nice", Label).update(f"Current OS Nice for PID {pid}: (error/dead)")
-            except NoMatches:
-                pass
+                lbl.update(f"Current OS Nice for PID {pid}: (error / process gone)")
+        except NoMatches:
+            pass
 
-    # ── main collector control ─────────────────────────────────────────────────
+    # ── main collector buttons ────────────────────────────────────────────────
     def _refresh_cmd_preview(self) -> None:
         try:
             lv       = self.query_one("#sel-label",    Select).value or 0
@@ -1363,12 +1745,9 @@ class LatencyDashboard(App):
             pass
 
     def _refresh_all_collector_status(self) -> None:
-        # Main slot
         self._refresh_slot_label(self._slot_main,
                                  "#lbl-collector-status", "#sb-collector-pid")
-        # Compare A
         self._refresh_cmp_slot_label(self._slot_cmp_a, "a")
-        # Compare B
         self._refresh_cmp_slot_label(self._slot_cmp_b, "b")
 
     def _refresh_slot_label(self, slot: CollectorSlot,
@@ -1385,125 +1764,46 @@ class LatencyDashboard(App):
             s = self.query_one(sidebar_id, Label)
             s.update(str(slot.pid) if alive else "none")
             s.remove_class("status-stopped" if alive else "status-running")
-            s.add_class("status-running"   if alive else "status-stopped")
+            s.add_class("status-running" if alive else "status-stopped")
         except NoMatches:
             pass
 
     def _refresh_cmp_slot_label(self, slot: CollectorSlot, side: str) -> None:
-        alive = slot.alive
-        lbl_id    = f"#lbl-cmp-status-{side}"
+        alive     = slot.alive
+        status_id = f"#lbl-cmp-status-{side}"
         sidebar_id = f"#sb-cmp-{side}-pid"
         try:
-            w = self.query_one(lbl_id, Label)
-            if alive:
-                w.update(f"Running  PID {slot.pid}  "
-                         f"target={slot.target_pid} ({self._name_of(slot.target_pid)})")
-            else:
-                w.update(f"Collector {side.upper()}: stopped")
+            w = self.query_one(status_id, Label)
+            w.update(
+                f"Collector {side.upper()}: running (PID {slot.pid})"
+                if alive else
+                f"Collector {side.upper()}: stopped"
+            )
         except NoMatches:
             pass
         try:
             s = self.query_one(sidebar_id, Label)
             s.update(str(slot.pid) if alive else "none")
+            s.remove_class("status-stopped" if alive else "status-running")
+            s.add_class("status-running" if alive else "status-stopped")
         except NoMatches:
             pass
 
+    # ── main collector start/stop ─────────────────────────────────────────────
     @on(Button.Pressed, "#btn-start")
     def _on_start(self) -> None:
         self.action_start_collector()
-
-    def action_start_collector(self) -> None:
-        try:
-            all_mode = self.query_one("#cb-all-procs", Checkbox).value
-        except NoMatches:
-            all_mode = False
-        if self._selected_pid is None and not all_mode:
-            self.push_screen(InfoModal("No Process", "Select a process first."))
-            return
-        try:
-            lv = int(self.query_one("#sel-label",       Select).value or 0)
-            ml = int(self.query_one("#inp-min-lat",      Input).value  or "0")
-            sr = int(self.query_one("#inp-sample-rate",  Input).value  or "1")
-        except (NoMatches, ValueError):
-            lv, ml, sr = 0, 0, 1
-        try:
-            reset = self.query_one("#cb-reset-csv", Checkbox).value
-        except NoMatches:
-            reset = False
-        if reset:
-            for p in [MAIN_EVENTS_FILE,
-                      CMP_A_EVENTS_FILE,
-                      CMP_B_EVENTS_FILE,
-                      os.path.join(BASE_DIR, "ebpf_events.csv"),
-                      os.path.join(BASE_DIR, "ebpf_logs", "ebpf_events.csv"),
-                      os.path.join(BASE_DIR, "dataset.csv")]:
-                try:
-                    os.remove(p)
-                except FileNotFoundError:
-                    pass
-        if self._slot_main.alive:
-            self._slot_main.stop()
-            time.sleep(0.25)
-        target = 0 if all_mode else int(self._selected_pid or 0)
-        ok, msg = self._slot_main.launch(lv, target, ml, sr, self._events_path())
-        self._refresh_all_collector_status()
-        self.push_screen(InfoModal("Collector " + ("Started" if ok else "Error"), msg))
 
     @on(Button.Pressed, "#btn-stop")
     def _on_stop(self) -> None:
         self.action_stop_collector_action()
 
-    def action_stop_collector_action(self) -> None:
-        if not self._slot_main.alive:
-            self.push_screen(InfoModal("Not Running", "No main collector is running."))
-            return
-        msg = self._slot_main.stop()
-        self._refresh_all_collector_status()
-        self.push_screen(InfoModal("Collector", msg))
-
-    # ── priority change ────────────────────────────────────────────────────────
-    @on(Button.Pressed, "#btn-apply-nice")
-    def _on_apply_nice(self) -> None:
-        if self._selected_pid is None:
-            self.push_screen(InfoModal("No Process", "Select a process first."))
-            return
-        
-        try:
-            nice_val = int(self.query_one("#inp-nice-val", Input).value)
-        except ValueError:
-            self.push_screen(InfoModal("Invalid Value", "Please enter a valid integer for nice."))
-            return
-            
-        pid = self._selected_pid
-        try:
-            if psutil is not None:
-                p = psutil.Process(pid)
-                p.nice(nice_val)
-            else:
-                os.system(f"renice -n {nice_val} -p {pid}")
-            self.push_screen(InfoModal("Priority Changed", f"Process {pid} nice value set to {nice_val}."))
-            self._do_refresh()
-        except Exception as e:
-            self.push_screen(InfoModal("Error", f"Failed to change nice value: {e}"))
-
-    # ── param change listeners ─────────────────────────────────────────────────
-    @on(Input.Changed,    "#inp-min-lat")
-    @on(Input.Changed,    "#inp-sample-rate")
-    @on(Select.Changed,   "#sel-label")
-    @on(Checkbox.Changed, "#cb-all-procs")
-    def _on_param_change(self, _: object) -> None:
-        self._refresh_cmd_preview()
-
-    # ── sidebar controls ───────────────────────────────────────────────────────
     @on(Button.Pressed, "#btn-refresh")
-    def _on_refresh(self) -> None:
+    def _on_btn_refresh(self) -> None:
         self.action_refresh()
 
-    def action_refresh(self) -> None:
-        self._do_refresh()
-
     @on(Button.Pressed, "#btn-reload")
-    def _on_reload(self) -> None:
+    def _on_btn_reload(self) -> None:
         self._running_df = list_running_processes()
         self._refresh_proc_list()
         self._refresh_cmp_option_lists()
@@ -1512,67 +1812,103 @@ class LatencyDashboard(App):
     def _on_auto_refresh(self, ev: Checkbox.Changed) -> None:
         self._auto_refresh = ev.value
 
-    @on(Input.Submitted, "#inp-refresh-secs")
-    def _on_refresh_secs(self, ev: Input.Submitted) -> None:
+    @on(Checkbox.Changed, "#cb-all-procs")
+    def _on_all_procs(self, _: Checkbox.Changed) -> None:
+        self._refresh_cmd_preview()
+
+    @on(Input.Changed, "#inp-refresh-secs")
+    def _on_refresh_secs(self, ev: Input.Changed) -> None:
         try:
-            secs = int(ev.value)
-            if secs >= 1:
-                self._refresh_secs = secs
-                if self._timer:
-                    self._timer.stop()
-                self._timer = self.set_interval(secs, self._tick)
+            secs = max(1, int(ev.value or "5"))
+            self._refresh_secs = secs
+            if self._timer:
+                self._timer.stop()
+            self._timer = self.set_interval(secs, self._tick)
         except ValueError:
             pass
 
-    # ── log panel ──────────────────────────────────────────────────────────────
-    def _refresh_log(self) -> None:
-        tail = read_log_tail(COLLECTOR_LOG, max_lines=60)
+    # ── actions ───────────────────────────────────────────────────────────────
+    def action_refresh(self) -> None:
+        self._do_refresh()
+
+    def action_start_collector(self) -> None:
+        if self._slot_main.alive:
+            self.push_screen(InfoModal(
+                "Already Running",
+                f"Main collector is running (PID {self._slot_main.pid}).\n"
+                "Stop it first (Ctrl+X) before starting a new one."))
+            return
         try:
-            log = self.query_one("#collector-log", Log)
-            log.clear()
-            log.write(tail if tail else "(no log output yet)")
+            all_mode = self.query_one("#cb-all-procs", Checkbox).value
+            target   = 0 if all_mode else (self._selected_pid or 0)
+            if target == 0 and not all_mode:
+                self.push_screen(InfoModal("No Process", "Select a process or enable 'Monitor all'."))
+                return
+            lv = int(self.query_one("#sel-label",       Select).value or 0)
+            ml = int(self.query_one("#inp-min-lat",     Input).value  or "0")
+            sr = int(self.query_one("#inp-sample-rate", Input).value  or "1")
+        except (NoMatches, ValueError):
+            lv, ml, sr, target = 0, 0, 1, 0
+
+        if self.query_one("#cb-reset-csv", Checkbox).value:
+            try:
+                p = self._events_path()
+                if os.path.exists(p):
+                    os.remove(p)
+            except Exception:
+                pass
+
+        ok, msg = self._slot_main.launch(lv, target, ml, sr, self._events_path())
+        self._refresh_all_collector_status()
+        self.push_screen(InfoModal("Collector " + ("Started" if ok else "Error"), msg))
+
+    def action_stop_collector_action(self) -> None:
+        msg = self._slot_main.stop()
+        self._refresh_all_collector_status()
+        self.push_screen(InfoModal("Collector", msg))
+
+    def action_show_help(self) -> None:
+        self.push_screen(InfoModal("Keyboard Shortcuts", (
+            "r         — Refresh data\n"
+            "Ctrl+S    — Start main collector\n"
+            "Ctrl+X    — Stop main collector\n"
+            "F1        — This help\n"
+            "q         — Quit\n\n"
+            "Priority Panel:\n"
+            "  1. Select a process in the picker\n"
+            "  2. Enter a nice value (-20 highest, 19 lowest)\n"
+            "  3. Press 'Apply Nice'\n"
+            "  4. Check the Priority Distribution chart\n"
+            "     in 'CPU and Priority' tab — new events\n"
+            "     should move to the new priority bucket.\n\n"
+            "Needs root (sudo) to lower nice below 0."
+        )))
+
+    # ── log refresh ───────────────────────────────────────────────────────────
+    def _refresh_log(self) -> None:
+        try:
+            log_widget = self.query_one("#collector-log", Log)
+            tail = read_log_tail(COLLECTOR_LOG, max_lines=80)
+            if tail:
+                log_widget.clear()
+                log_widget.write(tail)
         except NoMatches:
             pass
 
-    # ── helpers ────────────────────────────────────────────────────────────────
-    def _name_of(self, pid: Optional[int]) -> str:
-        if pid is None or self._running_df.empty:
-            return "-"
-        m = self._running_df[self._running_df["pid"] == pid]
-        return str(m.iloc[0]["name"]) if not m.empty else str(pid)
-
-    # ── help ───────────────────────────────────────────────────────────────────
-    def action_show_help(self) -> None:
-        self.push_screen(InfoModal("Help", (
-            "Keys\n"
-            "----\n"
-            "R         Refresh data\n"
-            "Ctrl+S    Start main collector\n"
-            "Ctrl+X    Stop  main collector\n"
-            "F1        This help\n"
-            "Q         Quit\n\n"
-            "Main tab workflow\n"
-            "-----------------\n"
-            "1. Filter + select a process in the picker.\n"
-            "2. Set label / min-latency / sample-rate.\n"
-            "3. Start Collector (needs sudo or cap_bpf).\n"
-            "4. Press R or wait for auto-refresh.\n\n"
-            "Compare tab workflow\n"
-            "--------------------\n"
-            "1. Open the Compare tab.\n"
-            "2. Column A: filter, pick process, Start A.\n"
-            "3. Column B: filter, pick process, Start B.\n"
-            "   Both collectors run SIMULTANEOUSLY.\n"
-            "   No stopping needed to start the second one.\n"
-            "4. Press R — charts + diff table update live.\n\n"
-            "Events file locations:\n"
-            f"  Main: {MAIN_EVENTS_FILE}\n"
-            f"  Compare A: {CMP_A_EVENTS_FILE}\n"
-            f"  Compare B: {CMP_B_EVENTS_FILE}"
-        )))
+    # ── helpers ───────────────────────────────────────────────────────────────
+    def _name_of(self, pid: int) -> str:
+        if not self._running_df.empty:
+            rows = self._running_df[self._running_df["pid"] == pid]
+            if not rows.empty:
+                return str(rows.iloc[0]["name"])
+        if psutil is not None:
+            try:
+                return psutil.Process(pid).name()
+            except Exception:
+                pass
+        return "unknown"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     LatencyDashboard().run()
-

@@ -39,13 +39,21 @@ echo "[*] Ensuring bpftool is available..."
 apt-get install -y linux-tools-$(uname -r) || echo "bpftool already installed or specific version needed."
 
 echo "[*] Installing Python dependencies..."
-# Running pip install, ideally in a virtual environment or with --break-system-packages (newer Debian/Ubuntu)
-if [ ! -f "requirements.txt" ]; then
-    echo "numpy\npandas\ntextual\nrich" > requirements.txt
+
+# Determine the original user to avoid creating root-owned venv
+REAL_USER=${SUDO_USER:-$USER}
+
+echo "[*] Creating Python Virtual Environment (venv) as user: $REAL_USER..."
+if [ ! -d "venv" ]; then
+    sudo -u $REAL_USER python3 -m venv venv
 fi
 
-# Attempt system-wide install or recommend venv
-pip3 install -r requirements.txt --break-system-packages 2>/dev/null || pip3 install -r requirements.txt || echo "[!] Please create a python venv: 'python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt'"
+if [ ! -f "requirements.txt" ]; then
+    echo -e "numpy\npandas\ntextual\nrich" > requirements.txt
+fi
+
+echo "[*] Installing requirements into venv..."
+sudo -u $REAL_USER ./venv/bin/pip install -r requirements.txt
 
 echo "=========================================="
 echo "[✓] Environment Setup Complete!"

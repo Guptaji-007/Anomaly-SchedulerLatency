@@ -4,7 +4,6 @@ A kernel-level performance profiling project that uses **eBPF (Extended Berkeley
 
 ## Getting Started
 
-We have provided automated scripts for a beginner-friendly setup. 
 
 ### 1. Prerequisites and Installation
 
@@ -15,8 +14,9 @@ sudo ./setup.sh
 ```
 
 **What this does:**
-- Installs `clang`, `llvm`, `bpftool`, `libbpf-dev`, Linux headers, and build tools.
-- Automatically creates a Python `venv` and installs required dependencies (`numpy`, `pandas`, `textual`, `rich`).
+- Automatically detects your OS (Ubuntu/Debian via `apt` or Fedora/RedHat via `dnf`).
+- Installs `clang`, `llvm`, `bpftool`, `libbpf`, Linux kernel headers, and build tools natively for your distribution.
+- Automatically creates a local Python `venv` and installs required dependencies (`numpy`, `pandas`, `textual`, `rich`) avoiding system package conflicts.
 
 ### 2. Compilation
 

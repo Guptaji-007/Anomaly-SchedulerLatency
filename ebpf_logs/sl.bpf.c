@@ -6,6 +6,7 @@
 #define PF_KTHREAD 0x00200000
 
 char LICENSE[] SEC("license") = "GPL";
+// GPL license allows access to certain privileged helper functions.
 
 /* =================================================
  * MAPS
@@ -17,6 +18,7 @@ struct {
     __type(key, u32);
     __type(value, u32);
 } target_tgid_map SEC(".maps");
+// Stores a target TGID filter. 
 
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -24,12 +26,13 @@ struct {
     __type(key, u32);
     __type(value, u64);
 } start SEC(".maps");
+// map for pid -> timestamp when task became runnable
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } events SEC(".maps");
-
+// Ring buffer used to send data to userspace.
 struct config {
     u64 min_latency_ns;
     u32 sample_rate;
@@ -49,6 +52,7 @@ struct {
     __type(key, u32);
     __type(value, u64);
 } sample_counter SEC(".maps");
+// per CPU counter for sampling logic
 
 /* =================================================
  * ENRICHED EVENT STRUCTURE
@@ -85,6 +89,9 @@ int BPF_PROG(sched_wakeup, struct task_struct *p)
     bpf_map_update_elem(&start, &pid, &ts, BPF_ANY);
     return 0;
 }
+
+
+// when a new task is woken up and added to the runqueue, it triggers sched_wakeup_new.
 
 SEC("tp_btf/sched_wakeup_new")
 int BPF_PROG(sched_wakeup_new, struct task_struct *p)
@@ -186,7 +193,9 @@ int BPF_PROG(sched_switch, bool preempt, struct task_struct *prev, struct task_s
     e->cpu_id = bpf_get_smp_processor_id(); 
     e->priority = next->prio; 
     bpf_core_read_str(e->comm, sizeof(e->comm), next->comm);
+    // bpf_core_read_str is a helper that safely reads a string from kernel memory.
 
     bpf_ringbuf_submit(e, 0);
+    // sends the event to userspace by submitting it to the ring buffer.
     return 0;
 }

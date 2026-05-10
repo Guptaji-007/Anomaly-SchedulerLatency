@@ -98,6 +98,7 @@ struct config {
     unsigned int sample_rate;
     unsigned int include_kernel_threads;
 };
+// this struct mirrors the config struct in the BPF program and is used to read config values from the BPF map.
 
 double latencies[MAX_EVENTS];
 int priorities[MAX_EVENTS];

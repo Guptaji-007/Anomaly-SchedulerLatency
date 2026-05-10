@@ -13,30 +13,30 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-echo "[*] Updating package list..."
-apt-get update -y
+echo "[*] Updating package list and installing toolchain/eBPF prerequisites..."
 
-echo "[*] Installing toolchain and eBPF prerequisites..."
-apt-get install -y \
-    clang \
-    llvm \
-    libelf-dev \
-    libpcap-dev \
-    gcc-multilib \
-    build-essential \
-    linux-tools-common \
-    linux-tools-generic \
-    linux-headers-$(uname -r) \
-    bpfcc-tools \
-    libbpf-dev \
-    python3 \
-    python3-pip \
-    python3-venv \
-    git \
-    make
+if command -v apt-get &> /dev/null; then
+    # Debian/Ubuntu
+    apt-get update -y
+    apt-get install -y \
+        clang llvm libelf-dev libpcap-dev gcc-multilib build-essential \
+        linux-tools-common linux-tools-generic linux-headers-$(uname -r) \
+        bpfcc-tools libbpf-dev python3 python3-pip python3-venv git make
 
-echo "[*] Ensuring bpftool is available..."
-apt-get install -y linux-tools-$(uname -r) || echo "bpftool already installed or specific version needed."
+    echo "[*] Ensuring bpftool is available..."
+    apt-get install -y linux-tools-$(uname -r) || echo "bpftool already installed or specific version needed."
+
+elif command -v dnf &> /dev/null; then
+    # Fedora/RedHat
+    dnf check-update -y || true
+    dnf install -y \
+        clang llvm elfutils-libelf-devel libpcap-devel glibc-devel.i686 \
+        gcc gcc-c++ make bpftool kernel-devel kernel-headers \
+        bcc-tools libbpf-devel python3 python3-pip git
+else
+    echo "[!] Neither apt-get nor dnf found. Please install dependencies manually."
+    exit 1
+fi
 
 echo "[*] Installing Python dependencies..."
 

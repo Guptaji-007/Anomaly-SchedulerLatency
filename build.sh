@@ -35,7 +35,9 @@ echo "[3/4] Compiling eBPF Programs & Collector..."
 ARCH=$(uname -m | sed 's/x86_64/x86/g; s/aarch64/arm64/g')
 
 # Compile BPF program
-clang -g -O2 -target bpf -D__TARGET_ARCH_${ARCH} -c sl.bpf.c -o sl.bpf.o
+# Fedora clang-21 has a known frontend crash when compiling some BPF programs.
+# Disabling the CodeGenPrepare pass avoids the crash.
+clang -g -O2 -target bpf -D__TARGET_ARCH_${ARCH} -mllvm -disable-cgp -c sl.bpf.c -o sl.bpf.o
 echo "✓ Success: sl.bpf.o compiled"
 
 # Generate skeleton
@@ -44,7 +46,7 @@ echo "✓ Success: sl.skel.h generated"
 
 # Compile user-space collector
 clang -g -O2 -Wall -I. -c collector.c -o collector.o
-clang -Wall -O2 -g collector.o -lbpf -lelf -lz -o collector
+clang -Wall -O2 -g collector.o -lbpf -lelf -lz -lm -o collector
 echo "✓ Success: collector compiled"
 
 
